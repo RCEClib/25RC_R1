@@ -153,7 +153,7 @@ int main(void)
   {
     IMU_Task(0);
 
-    //PID调试用
+
     //Serial_Printf("%f,%f,%f,%f\n", target_speed, actual_speed);//3508
     //Serial_Printf("%f,%f,%f,%f\n", target_angle_deg, actual_angle,outspeed,speed_dps);//6020
 
