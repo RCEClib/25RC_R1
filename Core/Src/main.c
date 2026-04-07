@@ -38,6 +38,8 @@
 #include <string.h>
 #include "imu.h"
 #include "ws2812.h"
+#include "aoto.h"
+
 
 /* USER CODE END Includes */
 
@@ -138,6 +140,7 @@ int main(void)
   UART7_Init();
   // 初始化底盘控制
   Chassis_Rudder_Init(&chassis);
+  Firmware_Init();   // 启动调参固件
 
   /* USER CODE END 2 */
 
@@ -154,11 +157,15 @@ int main(void)
     IMU_Task(0);
 
 
+    // 测试不同的速度值
+    //Chassis_Rudder_Task(&chassis, 1, NORMAL_MODE, -20, 0, 0); // 较慢
+    //Chassis_Rudder_Task(&chassis, 1, NORMAL_MODE, 70, 0, 0); // 较快
     //Serial_Printf("%f,%f,%f,%f\n", target_speed, actual_speed);//3508
     //Serial_Printf("%f,%f,%f,%f\n", target_angle_deg, actual_angle,outspeed,speed_dps);//6020
 
     Chassis_Rudder_Task(&chassis,remoter.key.SA, NORMAL_MODE,
-                      remoter.joy.l_y, remoter.joy.l_x, remoter.joy.r_y);
+                      remoter.joy.l_x, remoter.joy.l_y, remoter.joy.r_y);
+    //Firmware_Loop();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

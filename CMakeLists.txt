@@ -47,6 +47,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
         Core/APP/chassis_rudder.c
 
+        Core/BSP/aoto.cpp
         Core/BSP/BMI088driver.c
         Core/BSP/BMI088Middleware.c
         Core/BSP/fd.c

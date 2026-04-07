@@ -3,6 +3,10 @@
 
 #include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // 添加UART10相关函数声明
 void UART7_Init(void);
 uint8_t UART7_GetRxFlag(void);
@@ -17,5 +21,9 @@ void Serial_Printf(char *format, ...);
 
 uint8_t Serial_GetRxFlag(void);
 uint8_t Serial_GetRxData(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

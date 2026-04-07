@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "pid.h"
 
+
 extern float imu_yaw_rad;
 extern float target_speed;
 extern float actual_speed;
@@ -43,18 +44,22 @@ typedef struct {
 
 
 
-#ifdef __cplusplus
-extern "C"
-{
-#include "STM32Hardware.h"
-#endif
+// #ifdef __cplusplus
+// extern "C"
+// {
+// #include "STM32Hardware.h"
+// #endif
     void Chassis_Rudder_Init(Chassis_Rudder_t *chassis);
     void steering_wheel_solve(float Target_V_x, float Target_V_y, float Target_W);
     void Chassis_Rudder_Control(Chassis_Rudder_t *chassis);
     void Chassis_Rudder_Task(Chassis_Rudder_t *chassis, uint8_t en,
                             Chassis_Mode mode, float vx, float vy, float vw);
 
-#ifdef __cplusplus
-}
-#endif
+
+    extern Chassis_Rudder_t chassis;//调参需要的底盘控制结构体
+
+
+// #ifdef __cplusplus
+// }
+//#endif
 #endif

@@ -57,9 +57,9 @@ void Chassis_Rudder_Init(Chassis_Rudder_t *chassis) {
 
     // 设置轮向电机方向校准
     chassis->wheel_direction_calibration[0] = 1;
-    chassis->wheel_direction_calibration[1] = -1;
+    chassis->wheel_direction_calibration[1] = 1;
     chassis->wheel_direction_calibration[2] = 1;
-    chassis->wheel_direction_calibration[3] = -1;
+    chassis->wheel_direction_calibration[3] = 1;
 
     for (int i = 0; i < 4; i++) {
         //舵电机（转向）：增量式 级联PID（角度环 + 速度环）
@@ -152,7 +152,7 @@ for(int i=0; i<4; i++){
 
     // 零速保护：合速度极小，保持当前舵角，轮速为0
     if (fabsf(vwx) < 1e-6f && fabsf(vwy) < 1e-6f) {
-        out_angle = actual[i];          // 舵角不变
+        out_angle = 0.0f;               // 目标角度0°（车头方向）
         out_speed = 0.0f;               // 轮子不转
     }
     else {
@@ -197,58 +197,68 @@ for(int i=0; i<4; i++){
  */
 void Chassis_Rudder_Control(Chassis_Rudder_t *chassis) {
                              // ---------- 舵向控制（角度环+速度环） ----------
-    for (int i = 0; i < 4; i++) {
-        // 目标角度：弧度转度 + 零点偏移
-        target_angle_deg = theta[i] * RAD2DEG;
-        target_angle_deg = NormalizeAngleDeg(target_angle_deg);
-        target_angle_deg += zero_offset[i];
+   for (int i = 0; i < 4; i++) {
+        // 1. 计算目标角度（弧度→度，加零偏）
+        float target_deg = theta[i] * RAD2DEG;          // 已劣弧优化
+        target_deg += zero_offset[i];                   // 加零点偏移（度）
 
-        // 角度跳变修正（确保差值不超过180度）
-        float angle_diff = target_angle_deg - motor_feedback[MOTOR_6020_ID1_INDEX + i].angle;
-        if (angle_diff > 180.0f) target_angle_deg -= 360.0f;
-        else if (angle_diff < -180.0f) target_angle_deg += 360.0f;
+        // 2. 获取实际反馈角度（0~360度）
+        float actual_deg = motor_feedback[MOTOR_6020_ID1_INDEX + i].angle;
 
-        // 电机反馈速度：RPM -> 度/秒（6020电机每转6度？此处*6.0f需确认）
-        speed_dps = motor_feedback[MOTOR_6020_ID1_INDEX + i].speed * 6.0f;
-        actual_angle = motor_feedback[MOTOR_6020_ID1_INDEX + i].angle;
+       float angle_diff = target_angle_deg - actual_angle;
+       if (angle_diff > 180.0f) {
+           target_angle_deg -= 360.0f;
+       } else if (angle_diff < -180.0f) {
+           target_angle_deg += 360.0f;
+       }
 
-        // 级联PID计算目标电流
+       float diff = target_angle_deg - actual_angle;
+       if (fabsf(diff) > 90.0f) {
+           if (diff > 0) {
+               target_angle_deg -= 180.0f;
+           } else {
+               target_angle_deg += 180.0f;
+           }
+
+           speed_dps = motor_feedback[MOTOR_6020_ID1_INDEX + i].speed * 6.0f;
+       }
+
+        // 3. 速度反馈：RPM → 度/秒（6020 电机速比通常 6 度/RPM）
+        float speed_dps = motor_feedback[MOTOR_6020_ID1_INDEX + i].speed * 6.0f;
+
+        // 4. 级联 PID 计算电流
         chassis->rudder_currents[i] = (int16_t)incremental_pid_CascadeCalcWithFeedforward(
                                             &chassis->rudder_pid[i],
-                                            target_angle_deg, actual_angle, speed_dps, 0);
+                                            target_deg,          // 修正后的目标角度
+                                            actual_deg,           // 实际角度
+                                            speed_dps,
+                                            0);
 
-        outspeed = chassis->rudder_pid[i].outer.output;   // 调试用
-
-        // 方向校准
+        // 5. 方向校准
         chassis->rudder_currents[i] *= chassis->rudder_direction_calibration[i];
     }
 
-                              // ---------- 轮向控制（速度环） ----------
+    // ============================ 轮向控制循环 ============================
     for (int i = 0; i < 4; i++) {
-        // 实际速度（RPM）
-        actual_speed = motor_feedback[MOTOR_3508_ID1_INDEX + i].speed;
-
-        // 目标速度：轮子角速度 V[i] (rad/s) -> RPM
-        // 公式：RPM = rad/s * 60 / (2π) = rad/s * 30 / π
-        target_speed = wheel_omega_radps[i] * 30.0f / M_PI;
-
-        // PID计算目标电流
+        float actual_speed = motor_feedback[MOTOR_3508_ID1_INDEX + i].speed;  // RPM
+        float target_speed = wheel_omega_radps[i] * 30.0f / M_PI;             // rad/s → RPM
         chassis->wheel_currents[i] = (int16_t)PID_Calculate(&chassis->wheel_pid[i],
                                                             target_speed, actual_speed);
-
-        // 方向校准
         chassis->wheel_currents[i] *= chassis->wheel_direction_calibration[i];
     }
 
-    // 发送电流指令
+    // ============================ 发送电流指令 ============================
     Motor_SendCurrent_6020(MOTOR_6020_GROUP1,
-            chassis->rudder_currents[0], chassis->rudder_currents[1],
-            chassis->rudder_currents[2], chassis->rudder_currents[3]);
+            chassis->rudder_currents[0],
+            chassis->rudder_currents[1],
+            chassis->rudder_currents[2],
+            chassis->rudder_currents[3]);
     Motor_SendCurrent_3508(MOTOR_3508_GROUP1,
-            chassis->wheel_currents[0], chassis->wheel_currents[1],
-            chassis->wheel_currents[2], chassis->wheel_currents[3]);
+            chassis->wheel_currents[0],
+            chassis->wheel_currents[1],
+            chassis->wheel_currents[2],
+            chassis->wheel_currents[3]);
 }
-
 
 
 /**
