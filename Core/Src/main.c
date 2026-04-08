@@ -154,16 +154,16 @@ int main(void)
 
   while (1)
   {
-    IMU_Task(0);
+    IMU_Task(1);
 
-
+    //Serial_Printf("%f\n",motor_feedback[MOTOR_6020_ID1_INDEX + 3].angle);
     // 测试不同的速度值
     //Chassis_Rudder_Task(&chassis, 1, NORMAL_MODE, -20, 0, 0); // 较慢
     //Chassis_Rudder_Task(&chassis, 1, NORMAL_MODE, 70, 0, 0); // 较快
-    //Serial_Printf("%f,%f,%f,%f\n", target_speed, actual_speed);//3508
-    //Serial_Printf("%f,%f,%f,%f\n", target_angle_deg, actual_angle,outspeed,speed_dps);//6020
+    //Serial_Printf("%f,%f\n", target_speed, motor_feedback[MOTOR_3508_ID1_INDEX + 1].speed);//3508
+    Serial_Printf("%f,%f,%f,%f\n", target_angle_deg, actual_angle,outspeed,speed_dps);//6020
 
-    Chassis_Rudder_Task(&chassis,remoter.key.SA, NORMAL_MODE,
+    Chassis_Rudder_Task(&chassis, remoter.key.SA,
                       remoter.joy.l_x, remoter.joy.l_y, remoter.joy.r_y);
     //Firmware_Loop();
     /* USER CODE END WHILE */
