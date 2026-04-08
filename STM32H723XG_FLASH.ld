@@ -241,7 +241,14 @@ SECTIONS
     . = ALIGN(8);
   } >DTCMRAM
 
-
+/* 新增：DMA 可访问的 RAM_D1 段 */
+  .ram_d1 (NOLOAD) :
+  {
+    . = ALIGN(4);
+    *(.ram_d1)
+    *(.ram_d1*)
+    . = ALIGN(4);
+  } >RAM_D1
 
   /* Remove information from the standard libraries */
   /DISCARD/ :

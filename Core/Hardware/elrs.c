@@ -5,9 +5,23 @@
 #include <serial.h>
 #include "string.h"
 #include "usart.h"
+#include "pid.h"
+#include "chassis_rudder.h"
+#include "main.h"
+#include "stm32h7xx_hal.h"
+#include "motor.h"
 
 //uint8_t rx_buff[BUFF_SIZE];
 __attribute__((section(".ram_d1"))) uint8_t rx_buff[BUFF_SIZE];
+
+uint8_t rx_buffer_pid[256];
+uint8_t rx_index_pid = 0;
+
+PID_Controller my_pid;
+float current_cmd = 0.0f;
+
+
+float new_kp, new_ki, new_kd;
 
 remoter_t remoter;
 
@@ -16,6 +30,7 @@ HAL_StatusTypeDef ELRS_Init(void) {
         return HAL_ERROR;
     }
     printf("ERLS init success!\n");
+    HAL_UART_Receive_IT(&huart1, &rx_buffer_pid[rx_index_pid], 1);//重启接收
     return HAL_OK;
 }
 
@@ -138,10 +153,70 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
         }
         HAL_UARTEx_ReceiveToIdle_DMA(&huart10, rx_buff, BUFF_SIZE);  // 再重启
     }
+
+//     if (huart->Instance == USART1) {                     //处理ai数据部分
+//
+//         current_cmd = PID_Calculate(&my_pid, remoter.joy.l_y,motor_feedback[MOTOR_3508_ID1_INDEX].speed);
+//         if (received_bufferpid[buffer_index_pid] == '\n') {
+//             received_bufferpid[buffer_index_pid] = '\0';  // 替换换行符为结束符
+//
+//
+//             ProcessAICommand((char*)received_bufferpid, &new_kp, &new_ki, &new_kd);//接收后处理ai数据
+//
+//             for (int i = 0; i < 4; i++) {
+//                 my_pid.Kp = new_kp;
+//                 my_pid.Ki = new_ki;
+//                 my_pid.Kd = new_kd;       //赋值pid
+//             }
+// //数据格式：遥控器输入,实际值（编码器返回）,pid计算输出,误差,P,I,D\n
+//             SendPIDDataToPC(10
+//                 , motor_feedback[MOTOR_3508_ID1_INDEX].speed, current_cmd, remoter.joy.l_y - motor_feedback[MOTOR_3508_ID1_INDEX].speed,my_pid.Kp,my_pid.Ki,my_pid.Kd);
+//         }
+//             if (buffer_index_pid >= sizeof(received_bufferpid)) {
+//                 buffer_index_pid = 0;  // 防止溢出
+//             }
+//             HAL_UART_Receive_IT(&huart1, &received_bufferpid[buffer_index_pid], 1);//重启接收
+//     }
 }
 
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+    if (huart->Instance == USART1) {
+        // 检查是否收到换行符（结束标志）
+        // if (rx_buffer_pid[rx_index_pid - 1] == '\n' || rx_buffer_pid[rx_index_pid - 1] == '\r') {
+            // rx_buffer_pid[rx_index_pid - 1] = '\0';  // 替换换行符为结束符
 
+            // 解析AI命令
+            ProcessAICommand((char*)rx_buffer_pid, &new_kp, &new_ki, &new_kd);
 
+            // 更新PID参数
+            my_pid.Kp = new_kp;
+            my_pid.Ki = new_ki;
+            my_pid.Kd = new_kd;
+
+            // 计算PID
+            current_cmd = PID_Calculate(&my_pid, remoter.joy.l_y,
+                                        motor_feedback[MOTOR_3508_ID1_INDEX].speed);
+
+            // 发送调试数据到PC
+            SendPIDDataToPC(HAL_GetTick(),
+                motor_feedback[MOTOR_3508_ID1_INDEX].speed,
+                current_cmd,
+                remoter.joy.l_y - motor_feedback[MOTOR_3508_ID1_INDEX].speed,
+                my_pid.Kp, my_pid.Ki, my_pid.Kd);
+
+            // 重置索引，准备接收下一帧
+            rx_index_pid = 0;
+        // }
+
+        // 检查缓冲区溢出
+        if (rx_index_pid >= BUFF_SIZE) {
+            rx_index_pid = 0;  // 溢出则丢弃当前帧，重新开始
+        }
+
+        // 继续接收下一个字节
+        HAL_UART_Receive_IT(&huart1, &rx_buffer_pid[rx_index_pid++], 1);
+    }
+}
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
     if (huart->Instance == USART10) {

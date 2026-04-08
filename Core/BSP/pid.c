@@ -1,6 +1,12 @@
 #include "pid.h"
 #include <math.h>
 #include <stdbool.h>
+#include <string.h>
+#include <stdio.h>
+#include "usart.h"
+
+
+
 
 // 普通PID初始化函数
 void PID_Init(PID_Controller *pid, float Kp, float Ki, float Kd,
@@ -158,3 +164,31 @@ float incremental_pid_CascadeCalcWithFeedforward(Incremental_PID_Controller_Grou
 
     return pid->output;
 }
+
+void SendPIDDataToPC(float setpoint, float input, float index,           //发送到电脑
+                    float error, float p, float i, float d) {
+    uint32_t timestamp = HAL_GetTick();
+    char buffer[128];
+
+    sprintf(buffer, "%lu,%.2f,%.2f,%.2f,%.2f,%.4f,%.4f,%.4f\n",
+            timestamp, setpoint, input, index, error, p, i, d);
+
+    HAL_UART_Transmit(&huart1, (uint8_t*)buffer, strlen(buffer), HAL_MAX_DELAY);
+}
+
+void ProcessAICommand(char* command, float* new_kp, float* new_ki, float* new_kd) {
+
+    if (strncmp(command, "PID,", 4) == 0) /* 检查命令是否以 "PID," 开头 */{
+        sscanf(command, "PID,%f,%f,%f", new_kp, new_ki, new_kd); /* 解析命令参数 */
+        printf("AI调参完成: P=%.4f, I=%.4f, D=%.4f\n", *new_kp, *new_ki, *new_kd);
+    } else {
+        *new_kp = *new_ki = *new_kd = 0.0f;
+    }
+}
+
+// // 调用示例
+// float kp, ki, kd;
+// ProcessAICommand("PID,2.5,0.3,0.15", &kp, &ki, &kd);
+// 现在 kp=2.5, ki=0.3, kd=0.15
+
+

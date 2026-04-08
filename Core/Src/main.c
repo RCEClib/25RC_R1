@@ -137,7 +137,11 @@ int main(void)
   Serial_Init();
   UART7_Init();
   // 初始化底盘控制
-  Chassis_Rudder_Init(&chassis);
+  // Chassis_Rudder_Init(&chassis);
+
+  // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+  // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_RESET);
+  // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_15, GPIO_PIN_RESET);
 
   /* USER CODE END 2 */
 
@@ -145,20 +149,24 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 
   //RGB控制
-  WS2812_Ctrl(30, 40, 50);
+  WS2812_Ctrl(0, 0, 0);
   //音乐播放《你》
   //gala_you();
 
   while (1)
   {
-    IMU_Task(0);
+    // IMU_Task(0);
 
 
     //Serial_Printf("%f,%f,%f,%f\n", target_speed, actual_speed);//3508
     //Serial_Printf("%f,%f,%f,%f\n", target_angle_deg, actual_angle,outspeed,speed_dps);//6020
 
-    Chassis_Rudder_Task(&chassis,remoter.key.SA, NORMAL_MODE,
-                      remoter.joy.l_y, remoter.joy.l_x, remoter.joy.r_y);
+    // Chassis_Rudder_Task(&chassis,remoter.key.SA, NORMAL_MODE,
+    //                   remoter.joy.l_y, remoter.joy.l_x, remoter.joy.r_y);
+    Motor_SendCurrent_3508(MOTOR_3508_GROUP1, 1000, 2000, 500, 500);
+    HAL_Delay(20);
+
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

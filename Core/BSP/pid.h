@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+
 // PID控制器结构体
 typedef struct {
     float Kp;           // 比例系数
@@ -64,4 +65,9 @@ float Incremental_PID_Calculate(Incremental_PID_Controller *pid, float target,
 float incremental_pid_CascadeCalcWithFeedforward(Incremental_PID_Controller_Group *pid,
                                                   float angle_target, float angle_actual,
                                                   float motor_speed, float speed_feedforward);
+
+void SendPIDDataToPC(float setpoint, float input, float index,           //发送到电脑
+                    float error, float p, float i, float d);
+
+void ProcessAICommand(char* command, float* new_kp, float* new_ki, float* new_kd); // 处理AI命令
 #endif // PID_H
