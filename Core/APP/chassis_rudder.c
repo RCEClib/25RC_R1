@@ -82,7 +82,7 @@ void Chassis_Rudder_Init(Chassis_Rudder_t *chassis) {
     chassis->rudder_direction_calibration[3] =  1;  // 右前
 
     // 轮向电机方向校准（根据实际接线调整）
-    chassis->wheel_direction_calibration[0] =  -1;   // 左前
+    chassis->wheel_direction_calibration[0] =  1;   // 左前
     chassis->wheel_direction_calibration[1] =  1;   // 左后
     chassis->wheel_direction_calibration[2] =  -1;   // 右后
     chassis->wheel_direction_calibration[3] =  -1;   // 右前
@@ -280,15 +280,15 @@ void Chassis_Rudder_Task(Chassis_Rudder_t *chassis, Chassis_Mode mode,
     float omega_total = omega_user + chassis->spin_rate;
 
     // 读取IMU当前车头朝向（与正北的夹角）
-    float yaw_rad = imu_data.yaw * DEG2RAD;   //返回弧度值 [-π, π]
+    float yaw_rad = imu_data.yaw;   //返回弧度值 [0, 2π]
 
     // 世界坐标系 → 车体坐标系（核心变换）
-    // 目的：无论车头朝向哪里，推摇杆的前就是正北，左就是正西
+    // 无论车头朝向哪里，推摇杆的前就是正北，左就是正西
     float cos_yaw = cosf(yaw_rad);
     float sin_yaw = sinf(yaw_rad);
 
-    float vx_body =  vx_world * cos_yaw + vy_world * sin_yaw;
-    float vy_body = -vx_world * sin_yaw + vy_world * cos_yaw;
+    float vx_body =  vx_world * cos_yaw - vy_world * sin_yaw;
+    float vy_body =  vx_world * sin_yaw + vy_world * cos_yaw;
 
 
     // 模式切换处理

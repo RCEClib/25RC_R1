@@ -12,9 +12,9 @@ typedef struct {
 } IMU_Data;
 
 HAL_StatusTypeDef IMU_Init(void);
+
 void IMU_Task(uint8_t temp_key);
 
 extern IMU_Data imu_data;
-extern float yaw;
 
 #endif /* __IMU_H__ */

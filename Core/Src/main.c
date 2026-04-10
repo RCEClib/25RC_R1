@@ -152,9 +152,9 @@ int main(void)
     IMU_Task(1);
 
 
-    Serial_Printf("%f\n",yaw);
+    Serial_Printf("%.1f\n",imu_data.yaw);
 
-    //Serial_Printf("%f\n", motor_feedback[MOTOR_6020_ID1_INDEX + 3].angle);
+   // Serial_Printf("%f\n", motor_feedback[MOTOR_6020_ID1_INDEX + 3].angle);
     // 测试不同的速度值
     //Chassis_Rudder_Task(&chassis, 1, NORMAL_MODE, -20, 0, 0); // 较慢
     //Chassis_Rudder_Task(&chassis, 1, NORMAL_MODE, 70, 0, 0); // 较快
@@ -163,6 +163,7 @@ int main(void)
 
     Chassis_Rudder_Task(&chassis, remoter.key.SA,
                       remoter.joy.l_x, remoter.joy.l_y, remoter.joy.r_y);
+    HAL_Delay(0);
     //Firmware_Loop();
     /* USER CODE END WHILE */
 

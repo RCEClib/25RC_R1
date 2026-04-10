@@ -13,7 +13,6 @@ IMU_Data imu_data;
 
 static float alpha = 0.98f;
 static float dt    = 0.001f;
-float yaw = 0.0f;
 
 #define DES_TEMP 40.0f
 #define KP 100.f
@@ -49,14 +48,25 @@ void IMU_Calculate(IMU_Data* imu_data) {
     float acc_pitch = atan2f(accel_y, accel_z);
     float acc_roll =
         atan2f(-accel_x, sqrtf(accel_y * accel_y + accel_z * accel_z));
-    float gyro_pitch = gyro_x * 2 * dt;
-    float gyro_roll  = gyro_y * 2 * dt;
-    float gyro_yaw   = gyro_z * 2 * dt;
+    float gyro_pitch = gyro_x  * dt;
+    float gyro_roll  = gyro_y  * dt;
+   // float gyro_yaw   = gyro_z * 2 * dt;
+    float gyro_yaw   = gyro_z * dt * (180.0f / M_PI);  // rad → deg
     imu_data->pitch =
         alpha * (imu_data->pitch + gyro_pitch) + (1 - alpha) * acc_pitch;
     imu_data->roll =
         alpha * (imu_data->roll + gyro_roll) + (1 - alpha) * acc_roll;
-    imu_data->yaw += gyro_yaw;
+  //  imu_data->yaw += gyro_yaw;
+
+    // 陀螺仪 z 轴角速度 (rad/s) → 角度增量 (度)//4.11
+    float delta_yaw_rad = gyro_z * dt; // 弧度
+    imu_data->yaw += delta_yaw_rad;
+
+    // 归一化到 [0, 2PI)
+    if (imu_data->yaw >= 2*M_PI) imu_data->yaw -= 2*M_PI;
+    if (imu_data->yaw < 0.0f)    imu_data->yaw += 2*M_PI;
+
+
 }
 
 void IMU_TempCtrl(float temp) {
@@ -75,6 +85,4 @@ void IMU_Task(uint8_t temp_key) {
     BMI088_read(imu_data.gyro, imu_data.accel, &imu_data.temp);// 读取原始数据
     IMU_TempCtrl(imu_data.temp);// 温度控制
     IMU_Calculate(&imu_data);// 姿态解算
-
-    yaw = imu_data.yaw * (M_PI / 180.0f);
 }
