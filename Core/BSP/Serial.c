@@ -156,21 +156,4 @@ uint8_t Serial_GetRxData(void)
   * 参    数：huart UART句柄
   * 返 回 值：无
   */
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-	if (huart->Instance == USART1)
-	{
-		Serial_RxFlag = 1;  // 设置接收标志位
-		// 数据已经在Serial_RxData中，因为我们在初始化时启动了接收中断
-		// 重新启动接收中断以接收下一个字节
-		HAL_UART_Receive_IT(&huart1, &Serial_RxData, 1);
-	}
 
-	else if (huart->Instance == UART7)
-	{
-		// 直接根据接收到的字符设置angleTarget
-
-		// 重新启动中断接收
-		HAL_UART_Receive_IT(&huart7, &uart7_rx_char, 1);
-	}
-}
