@@ -136,6 +136,7 @@ int main(void)
   FDCAN_Init(&hfdcan2);
   Serial_Init();
   UART7_Init();
+
   // 初始化底盘控制
   // Chassis_Rudder_Init(&chassis);
 
@@ -163,7 +164,7 @@ int main(void)
 
     // Chassis_Rudder_Task(&chassis,remoter.key.SA, NORMAL_MODE,
     //                   remoter.joy.l_y, remoter.joy.l_x, remoter.joy.r_y);
-    Motor_SendCurrent_3508(MOTOR_3508_GROUP1, 1000, 2000, 500, 500);
+    // Motor_SendCurrent_3508(MOTOR_3508_GROUP1, 500, 500, 500, 500);
     HAL_Delay(20);
 
 

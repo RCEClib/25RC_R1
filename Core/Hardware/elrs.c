@@ -186,23 +186,26 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
             // rx_buffer_pid[rx_index_pid - 1] = '\0';  // 替换换行符为结束符
 
             // 解析AI命令
-            ProcessAICommand((char*)rx_buffer_pid, &new_kp, &new_ki, &new_kd);
+            ProcessAICommand((char*)rx_buffer_pid, &new_kp, &new_ki, &new_kd);//进入回调函数 先进行数据解析
 
             // 更新PID参数
             my_pid.Kp = new_kp;
             my_pid.Ki = new_ki;
             my_pid.Kd = new_kd;
 
+        PID_Init(&my_pid, new_kp, new_ki, new_kd, 1000, 1000);  //将值赋值给pid控制器
             // 计算PID
-            current_cmd = PID_Calculate(&my_pid, remoter.joy.l_y,
-                                        motor_feedback[MOTOR_3508_ID1_INDEX].speed);
+            current_cmd = PID_Calculate(&my_pid, 1000,
+                                        motor_feedback[MOTOR_3508_ID1_INDEX].speed);  //计算pid输出电流
+
+        Motor_SendCurrent_3508(MOTOR_3508_GROUP1, current_cmd, current_cmd, current_cmd, current_cmd);
 
             // 发送调试数据到PC
-            SendPIDDataToPC(HAL_GetTick(),
-                motor_feedback[MOTOR_3508_ID1_INDEX].speed,
+            SendPIDDataToPC(1000,//目标速度
+                motor_feedback[MOTOR_3508_ID1_INDEX].speed,//反馈速度
                 current_cmd,
-                remoter.joy.l_y - motor_feedback[MOTOR_3508_ID1_INDEX].speed,
-                my_pid.Kp, my_pid.Ki, my_pid.Kd);
+                1000 - motor_feedback[MOTOR_3508_ID1_INDEX].speed,//误差：1000输入减去反馈速度
+                my_pid.Kp, my_pid.Ki, my_pid.Kd);//定义pid数值
 
             // 重置索引，准备接收下一帧
             rx_index_pid = 0;
