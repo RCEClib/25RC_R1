@@ -38,8 +38,6 @@
 #include <string.h>
 #include "imu.h"
 #include "ws2812.h"
-#include "aoto.h"
-
 
 /* USER CODE END Includes */
 
@@ -70,8 +68,6 @@
 // 3. 代码简洁：所有底盘控制函数都需要此结构体指针参数
 // 4. 状态持久：底盘的运动状态、PID参数等需要长期保持
 Chassis_Rudder_t chassis;
-
-uint8_t en = 0;
 
 /* USER CODE END PV */
 
@@ -131,7 +127,7 @@ int main(void)
   MX_TIM12_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-
+  IMU_Init();
   ELRS_Init();
   Motor_Init();
   FDCAN_Init(&hfdcan1);
@@ -140,7 +136,6 @@ int main(void)
   UART7_Init();
   // 初始化底盘控制
   Chassis_Rudder_Init(&chassis);
-  Firmware_Init();   // 启动调参固件
 
   /* USER CODE END 2 */
 
@@ -148,7 +143,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 
   //RGB控制
-  WS2812_Ctrl(30, 40, 50);
+  WS2812_Ctrl(3, 4, 5);
   //音乐播放《你》
   //gala_you();
 
@@ -156,12 +151,15 @@ int main(void)
   {
     IMU_Task(1);
 
-    //Serial_Printf("%f\n",motor_feedback[MOTOR_6020_ID1_INDEX + 3].angle);
+
+    Serial_Printf("%f\n",yaw);
+
+    //Serial_Printf("%f\n", motor_feedback[MOTOR_6020_ID1_INDEX + 3].angle);
     // 测试不同的速度值
     //Chassis_Rudder_Task(&chassis, 1, NORMAL_MODE, -20, 0, 0); // 较慢
     //Chassis_Rudder_Task(&chassis, 1, NORMAL_MODE, 70, 0, 0); // 较快
     //Serial_Printf("%f,%f\n", target_speed, motor_feedback[MOTOR_3508_ID1_INDEX + 1].speed);//3508
-    Serial_Printf("%f,%f,%f,%f\n", target_angle_deg, actual_angle,outspeed,speed_dps);//6020
+    // Serial_Printf("%f,%f,%f,%f\n", target_angle_deg, actual_angle,outspeed,speed_dps);//6020
 
     Chassis_Rudder_Task(&chassis, remoter.key.SA,
                       remoter.joy.l_x, remoter.joy.l_y, remoter.joy.r_y);

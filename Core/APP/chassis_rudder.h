@@ -15,7 +15,7 @@ extern float target_angle_deg;  // 舵电机目标角度（度）
 // #define MAX_ANGULAR_SPEED  2.0f   // 最大角速度 (rad/s)
 
 // 顺序：0-左前，1-左后，2-右后，3-右前（逆时针）
-#define MOTOR0CENTER 211.0f   // 左前舵轮零点
+#define MOTOR0CENTER 240.0f   // 左前舵轮零点
 #define MOTOR1CENTER 91.0f   // 左后舵轮零点
 #define MOTOR2CENTER 302.0f   // 右后舵轮零点
 #define MOTOR3CENTER 117.0f   // 右前舵轮零点

@@ -82,10 +82,10 @@ void Chassis_Rudder_Init(Chassis_Rudder_t *chassis) {
     chassis->rudder_direction_calibration[3] =  1;  // 右前
 
     // 轮向电机方向校准（根据实际接线调整）
-    chassis->wheel_direction_calibration[0] =  1;   // 左前
+    chassis->wheel_direction_calibration[0] =  -1;   // 左前
     chassis->wheel_direction_calibration[1] =  1;   // 左后
-    chassis->wheel_direction_calibration[2] =  1;   // 右后
-    chassis->wheel_direction_calibration[3] =  1;   // 右前
+    chassis->wheel_direction_calibration[2] =  -1;   // 右后
+    chassis->wheel_direction_calibration[3] =  -1;   // 右前
 
     // 验证并修正校准系数
     for (int i = 0; i < 4; i++) {
@@ -132,7 +132,7 @@ void steering_wheel_solve(float vx_body, float vy_body, float omega) {
     // 计算每个轮子的轮心合速度分量（车体坐标系）
     float vwx[4], vwy[4];
     for (int i = 0; i < 4; i++) {
-        vwx[i] = vx_body - omega * ly[i];   // 轮心X方向速度
+        vwx[i] = vx_body + omega * ly[i];   // 轮心X方向速度
         vwy[i] = vy_body + omega * lx[i];   // 轮心Y方向速度
     }
 
@@ -280,8 +280,7 @@ void Chassis_Rudder_Task(Chassis_Rudder_t *chassis, Chassis_Mode mode,
     float omega_total = omega_user + chassis->spin_rate;
 
     // 读取IMU当前车头朝向（与正北的夹角）
-    // yaw_rad = 0 表示车头正北，90°（π/2）表示车头正东，-90°表示正西
-    float yaw_rad = imu_data.yaw * DEG2RAD;   // 需要您实现此函数，返回弧度值 [-π, π]
+    float yaw_rad = imu_data.yaw * DEG2RAD;   //返回弧度值 [-π, π]
 
     // 世界坐标系 → 车体坐标系（核心变换）
     // 目的：无论车头朝向哪里，推摇杆的前就是正北，左就是正西

@@ -3,12 +3,12 @@
   <component name="WaveformPlotterConfig">
     <option name="trackedVariables">
       <list>
-        <option value="joy.l_x" />
+        <option value="yaw" />
       </list>
     </option>
     <option name="variableNames">
       <list>
-        <option value="joy.l_x" />
+        <option value="yaw" />
       </list>
     </option>
   </component>

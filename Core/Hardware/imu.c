@@ -13,6 +13,7 @@ IMU_Data imu_data;
 
 static float alpha = 0.98f;
 static float dt    = 0.001f;
+float yaw = 0.0f;
 
 #define DES_TEMP 40.0f
 #define KP 100.f
@@ -74,4 +75,6 @@ void IMU_Task(uint8_t temp_key) {
     BMI088_read(imu_data.gyro, imu_data.accel, &imu_data.temp);// 读取原始数据
     IMU_TempCtrl(imu_data.temp);// 温度控制
     IMU_Calculate(&imu_data);// 姿态解算
+
+    yaw = imu_data.yaw * (M_PI / 180.0f);
 }
