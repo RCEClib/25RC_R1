@@ -45,22 +45,19 @@ void IMU_Calculate(IMU_Data* imu_data) {
     float gyro_x    = imu_data->gyro[0];
     float gyro_y    = imu_data->gyro[1];
     float gyro_z    = imu_data->gyro[2];
+
     float acc_pitch = atan2f(accel_y, accel_z);
-    float acc_roll =
-        atan2f(-accel_x, sqrtf(accel_y * accel_y + accel_z * accel_z));
+    float acc_roll = atan2f(-accel_x, sqrtf(accel_y * accel_y + accel_z * accel_z));
     float gyro_pitch = gyro_x  * dt;
     float gyro_roll  = gyro_y  * dt;
-   // float gyro_yaw   = gyro_z * 2 * dt;
-    float gyro_yaw   = gyro_z * dt * (180.0f / M_PI);  // rad → deg
+    float gyro_yaw   = gyro_z  * dt;
     imu_data->pitch =
         alpha * (imu_data->pitch + gyro_pitch) + (1 - alpha) * acc_pitch;
     imu_data->roll =
         alpha * (imu_data->roll + gyro_roll) + (1 - alpha) * acc_roll;
-  //  imu_data->yaw += gyro_yaw;
 
-    // 陀螺仪 z 轴角速度 (rad/s) → 角度增量 (度)//4.11
-    float delta_yaw_rad = gyro_z * dt; // 弧度
-    imu_data->yaw += delta_yaw_rad;
+     // 弧度
+    imu_data->yaw += gyro_yaw;
 
     // 归一化到 [0, 2PI)
     if (imu_data->yaw >= 2*M_PI) imu_data->yaw -= 2*M_PI;

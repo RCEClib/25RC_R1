@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "elrs.h"
+#include "fdcan.h"
 #include "imu.h"
 #include "motor.h"
 #include "pid.h"
@@ -17,6 +18,7 @@ float target_speed;
 float actual_speed;
 float outspeed;
 float speed_dps;
+float feed_forward;
 float actual_angle;
 float target_angle_deg;
 
@@ -32,7 +34,7 @@ const float zero_offset[4] = {MOTOR0CENTER, MOTOR1CENTER,
 #define MOTOR_3508_GEAR_RATIO 19.0f
 
 // 安全保护：最大允许电流（根据电机和驱动器实际限制调整）
-#define MAX_RUDDER_CURRENT 18000   // 舵电机最大电流（6020电机）
+#define MAX_RUDDER_CURRENT 25000   // 舵电机最大电流（6020电机）
 #define MAX_WHEEL_CURRENT  16384   // 轮电机最大电流（3508电机）
 
 // ============================ 辅助函数 ============================
@@ -69,6 +71,7 @@ void Chassis_Rudder_Init(Chassis_Rudder_t *chassis) {
     chassis->Target_Vy = 0.0f;
     chassis->Target_Wr = 0.0f;
     chassis->spin_rate = 0.0f;
+    chassis->feed_forward = 60.0f;
 
     for (int i = 0; i < 4; i++) {
         chassis->rudder_currents[i] = 0;
@@ -104,8 +107,8 @@ void Chassis_Rudder_Init(Chassis_Rudder_t *chassis) {
     }
 
     // 发送零电流，使电机处于待机状态
-    Motor_SendCurrent_6020(MOTOR_6020_GROUP1, 0, 0, 0, 0);
-    Motor_SendCurrent_3508(MOTOR_3508_GROUP1, 0, 0, 0, 0);
+    Motor_SendCurrent_Ex(&hfdcan2,MOTOR_6020_GROUP1, 0, 0, 0, 0);
+    Motor_SendCurrent_Ex(&hfdcan1,MOTOR_3508_GROUP1, 0, 0, 0, 0);
 }
 
 // ============================ 运动学解算（核心） ============================
@@ -194,7 +197,7 @@ void Chassis_Rudder_Control(Chassis_Rudder_t *chassis) {
         // 级联PID计算目标电流
         int16_t raw_current = (int16_t)incremental_pid_CascadeCalcWithFeedforward(
                                             &chassis->rudder_pid[i],
-                                            target_angle_deg, actual_angle, speed_dps, 10);
+                                            target_angle_deg, actual_angle, speed_dps, feed_forward);
         // 输出限幅保护（防止PID计算溢出或异常）
         if (raw_current > MAX_RUDDER_CURRENT) raw_current = MAX_RUDDER_CURRENT;
         if (raw_current < -MAX_RUDDER_CURRENT) raw_current = -MAX_RUDDER_CURRENT;
@@ -229,10 +232,10 @@ void Chassis_Rudder_Control(Chassis_Rudder_t *chassis) {
     }
 
     // 发送电流指令
-    Motor_SendCurrent_6020(MOTOR_6020_GROUP1,
+    Motor_SendCurrent_Ex(&hfdcan2,MOTOR_6020_GROUP1,
             chassis->rudder_currents[0], chassis->rudder_currents[1],
             chassis->rudder_currents[2], chassis->rudder_currents[3]);
-    Motor_SendCurrent_3508(MOTOR_3508_GROUP1,
+    Motor_SendCurrent_Ex(&hfdcan1,MOTOR_3508_GROUP1,
             chassis->wheel_currents[0], chassis->wheel_currents[1],
             chassis->wheel_currents[2], chassis->wheel_currents[3]);
 }
@@ -241,8 +244,7 @@ void Chassis_Rudder_Control(Chassis_Rudder_t *chassis) {
 /**
  * @brief 舵轮底盘任务函数（在主线循环中周期性调用）
  * @param chassis 底盘控制结构体指针
- * @param en      使能标志（1=使能，0=禁用）
- * @param mode    工作模式（NORMAL_MODE / STOP_MODE）
+ * @param mode    工作模式（NORMAL_MODE / STOP_MODE / GYRO_MODE）
  * @param vx      遥控器X轴（-100~100），对应车体前进速度
  * @param vy      遥控器Y轴（-100~100），对应车体左向速度
  * @param vw      遥控器Z轴（-100~100），对应自转角速度
@@ -262,7 +264,7 @@ void Chassis_Rudder_Task(Chassis_Rudder_t *chassis, Chassis_Mode mode,
     float max_linear_speed  = 1.5f;   // 最大线速度 1.5 m/s
     float max_angular_speed = 5.0f;   // 最大角速度 5 rad/s
 
-    if (mode == GYRO_MODE) chassis->spin_rate = 3.0f;// 小陀螺模式下的固定转角速度 3 rad/s
+    if (mode == GYRO_MODE) chassis->spin_rate = 4.0f;// 小陀螺模式下的固定转角速度 10 rad/s
     else chassis->spin_rate = 0.0f;                  // 正常模式下，不固定转角速度
 
 
@@ -306,6 +308,7 @@ void Chassis_Rudder_Task(Chassis_Rudder_t *chassis, Chassis_Mode mode,
     if (mode) {
         switch (chassis->Mode) {
             case NORMAL_MODE:
+            case GYRO_MODE:
                 chassis->Target_Vx = vx_body;
                 chassis->Target_Vy = vy_body;
                 chassis->Target_Wr = omega_total;
@@ -316,13 +319,13 @@ void Chassis_Rudder_Task(Chassis_Rudder_t *chassis, Chassis_Mode mode,
                 break;
             case STOP_MODE:
             default:
-                Motor_SendCurrent_6020(MOTOR_6020_GROUP1, 0, 0, 0, 0);
-                Motor_SendCurrent_3508(MOTOR_3508_GROUP1, 0, 0, 0, 0);
+                Motor_SendCurrent_Ex(&hfdcan2,MOTOR_6020_GROUP1, 0, 0, 0, 0);
+                Motor_SendCurrent_Ex(&hfdcan1,MOTOR_3508_GROUP1, 0, 0, 0, 0);
                 break;
         }
     } else {
         // 未使能，发送零电流
-        Motor_SendCurrent_6020(MOTOR_6020_GROUP1, 0, 0, 0, 0);
-        Motor_SendCurrent_3508(MOTOR_3508_GROUP1, 0, 0, 0, 0);
+        Motor_SendCurrent_Ex(&hfdcan2,MOTOR_6020_GROUP1, 0, 0, 0, 0);
+        Motor_SendCurrent_Ex(&hfdcan1,MOTOR_3508_GROUP1, 0, 0, 0, 0);
     }
 }

@@ -7,30 +7,44 @@
  *          6020为绝对编码器，3508和2006为增量编码器
  ******************************************************************************
  */
-
-#include "fd.h"
 #include "motor.h"
-
-#include <stdio.h>
-
+#include "fd.h"
 #include "Serial.h"
+#include <stdio.h>
 
 /* 宏定义 -------------------------------------------------------------------- */
 #define ENCODER_PER_ROUND 8192.0f  // 编码器每圈的脉冲数（8192线）
 #define ANGLE_THRESHOLD   270.0f   // 角度穿越阈值（优化为270°）
-#define MAX_MOTOR_ID      0x20B    // 最大电机ID
 
 /* 全局变量 ------------------------------------------------------------------ */
 Motor_Feedback_t motor_feedback[MOTOR_NUM] = {0};  // 电机反馈数据数组
+
+/* 外部变量声明 -------------------------------------------------------------- */
+extern FDCAN_HandleTypeDef hfdcan1;  // 声明外部CAN1句柄
+extern FDCAN_HandleTypeDef hfdcan2;  // 声明外部CAN2句柄
+extern FDCAN_HandleTypeDef hfdcan3;  // 声明外部CAN3句柄
+
+
+/**
+ * @brief  判断CAN句柄是否已经被初始化,即已经调用了FDCAN_Init
+ * @param  hfdcan: FDCAN句柄指针
+ * @retval 1: 已初始化, 0: 未初始化
+ */
+static uint8_t IsCanInitialized(FDCAN_HandleTypeDef *hfdcan) {
+    // 如果句柄非空且Instance指针非空，说明已经初始化了该CAN外设
+    return (hfdcan != NULL && hfdcan->Instance != NULL);
+}
 
 /**
  * @brief  电机初始化函数
  * @param  无
  * @retval HAL_OK: 初始化成功
- *         HAL_ERROR: 初始化失败
+ * @note   此函数会自动停止所有已激活CAN口上的所有电机组。
+ *         必须先初始化所需CAN口（调用FDCAN_Init），再调用本函数。
+ *         不会自动初始化FDCAN，也不会操作未初始化的CAN口。
  */
 HAL_StatusTypeDef Motor_Init(void) {
-    // 初始化所有电机类型
+    //初始化所有电机的类型（用于接收反馈时的角度计算）
     for (int i = 0; i < MOTOR_NUM; i++) {
         if (i < 8) {
             motor_feedback[i].type = MOTOR_3508;  // 前8个为3508电机（增量编码器）
@@ -41,36 +55,40 @@ HAL_StatusTypeDef Motor_Init(void) {
         }
     }
 
-    // 停止所有电机
-    Motor_SendCurrent_3508(MOTOR_3508_GROUP1, 0, 0, 0, 0);
-    Motor_SendCurrent_3508(MOTOR_3508_GROUP2, 0, 0, 0, 0);
+    //自动停止所有已激活CAN口上的所有电机组
+    //所有可能的电机组ID（涵盖3508/6020/2006的所有组）
+    uint32_t all_group_ids[] = {0x200, 0x1FF, 0x1FE, 0x2FE};
+    int num_groups = sizeof(all_group_ids) / sizeof(all_group_ids[0]);
 
-    Motor_SendCurrent_6020(MOTOR_6020_GROUP1, 0, 0, 0, 0);
-    Motor_SendCurrent_6020(MOTOR_6020_GROUP2, 0, 0, 0, 0);
-
-    Motor_SendCurrent_2006(MOTOR_2006_GROUP1, 0, 0, 0, 0);
-    Motor_SendCurrent_2006(MOTOR_2006_GROUP2, 0, 0, 0, 0);
-
-    // 初始化FDCAN通信
-    if ((FDCAN_Init(&hfdcan1) || FDCAN_Init(&hfdcan2)|| FDCAN_Init(&hfdcan3)) != HAL_OK) {
-        return HAL_ERROR;
+    // 检查每个CAN口是否已初始化
+    FDCAN_HandleTypeDef* can_handles[] = {&hfdcan1, &hfdcan2, &hfdcan3};
+    for (int i = 0; i < 3; i++) {
+        if (IsCanInitialized(can_handles[i])) {
+            // 对该已激活的CAN口，发送所有组ID的0电流（停止电机）
+            for (int j = 0; j < num_groups; j++) {
+                Motor_SendCurrent_Ex(can_handles[i], all_group_ids[j], 0, 0, 0, 0);
+            }
+        }
     }
-
-    printf("Motor init success (23 motors)\n");
+    Serial_Printf("Motor init success (auto-stopped on active CANs)\n");
     return HAL_OK;
 }
 
 /**
- * @brief  发送3508电机控制电流（增量编码器）- 使用CAN1
- * @param  group_id: 电机组ID (0x200)
+ * @brief  通用电机电流发送函数（可指定任意CAN口）
+ * @param  hfdcan: FDCAN句柄指针（例如 &hfdcan1, &hfdcan2, &hfdcan3）
+ * @param  group_id: 电机组ID
  * @param  current1-4: 4个电机的目标电流值
- * @retval HAL_OK: 发送成功
+ * @retval HAL_OK: 发送成功，其他: 发送失败
+ * @note   此函数为所有发送函数的核心实现，可根据需要调用任意CAN口
  */
-HAL_StatusTypeDef Motor_SendCurrent_3508(uint32_t group_id, int16_t current1,
-                                         int16_t current2, int16_t current3,
-                                         int16_t current4) {
+HAL_StatusTypeDef Motor_SendCurrent_Ex(FDCAN_HandleTypeDef *hfdcan,
+                                        uint32_t group_id,
+                                        int16_t current1, int16_t current2,
+                                        int16_t current3, int16_t current4) {
     uint8_t data[8];
 
+    // 将4个16位电流值打包成8字节数据
     data[0] = current1 >> 8;
     data[1] = current1;
     data[2] = current2 >> 8;
@@ -80,68 +98,8 @@ HAL_StatusTypeDef Motor_SendCurrent_3508(uint32_t group_id, int16_t current1,
     data[6] = current4 >> 8;
     data[7] = current4;
 
-    return FDCAN_Send(&hfdcan1, group_id, FDCAN_STANDARD_ID, data);
-}
-
-/**
- * @brief  发送6020电机控制电流（绝对编码器）- 使用CAN2
- * @param  group_id: 电机组ID (0x1FF或0x2FF)
- * @param  current1-4: 4个电机的目标电流值
- * @retval HAL_OK: 发送成功
- */
-HAL_StatusTypeDef Motor_SendCurrent_6020(uint32_t group_id, int16_t current1,
-                                         int16_t current2, int16_t current3,
-                                         int16_t current4) {
-    uint8_t data[8];
-
-    data[0] = current1 >> 8;
-    data[1] = current1;
-    data[2] = current2 >> 8;
-    data[3] = current2;
-    data[4] = current3 >> 8;
-    data[5] = current3;
-    data[6] = current4 >> 8;
-    data[7] = current4;
-
-    return FDCAN_Send(&hfdcan2, group_id, FDCAN_STANDARD_ID, data);
-}
-
-/**
- * @brief  发送2006电机控制电流（增量编码器）- 使用CAN3
- * @param  group_id: 电机组ID (0x200)
- * @param  current1-4: 4个电机的目标电流值
- * @retval HAL_OK: 发送成功
- */
-HAL_StatusTypeDef Motor_SendCurrent_2006(uint32_t group_id, int16_t current1,
-                                         int16_t current2, int16_t current3,
-                                         int16_t current4) {
-    uint8_t data[8];
-
-    data[0] = current1 >> 8;
-    data[1] = current1;
-    data[2] = current2 >> 8;
-    data[3] = current2;
-    data[4] = current3 >> 8;
-    data[5] = current3;
-    data[6] = current4 >> 8;
-    data[7] = current4;
-
-    // 2006电机使用CAN3控制
-    return FDCAN_Send(&hfdcan3, group_id, FDCAN_STANDARD_ID, data);
-}
-
-/**
- * @brief  设置电机目标角度和圈数
- * @param  motor_index: 电机索引
- * @param  target_angle: 目标角度 (0~360度)
- * @param  target_loop: 目标圈数
- * @retval 无
- */
-void Motor_SetAngleTarget(uint8_t motor_index, float target_angle, int16_t target_loop) {
-    if (motor_index < MOTOR_NUM) {
-        motor_feedback[motor_index].angle_target = target_angle;
-        motor_feedback[motor_index].loop_target = target_loop;
-    }
+    // 调用底层FDCAN发送函数
+    return FDCAN_Send(hfdcan, group_id, FDCAN_STANDARD_ID, data);
 }
 
 /**

@@ -61,7 +61,6 @@ typedef struct {
 #define MOTOR_2006_ID7_INDEX 21
 #define MOTOR_2006_ID8_INDEX 22
 
-extern Motor_Feedback_t motor_feedback[MOTOR_NUM];
 
 // 电机ID枚举 (明确枚举所有ID)
 typedef enum {
@@ -113,12 +112,13 @@ extern Motor_Feedback_t motor_feedback[MOTOR_NUM];
 
 // 函数声明
 HAL_StatusTypeDef Motor_Init(void);
-HAL_StatusTypeDef Motor_SendCurrent_3508(uint32_t group_id, int16_t current1, int16_t current2,
-                                         int16_t current3, int16_t current4);
-HAL_StatusTypeDef Motor_SendCurrent_6020(uint32_t group_id, int16_t current1, int16_t current2,
-                                         int16_t current3, int16_t current4);
-HAL_StatusTypeDef Motor_SendCurrent_2006(uint32_t group_id, int16_t current1, int16_t current2,
-                                         int16_t current3, int16_t current4);
+
+// 通用发送函数：可指定任意CAN句柄（自由选择CAN口）
+HAL_StatusTypeDef Motor_SendCurrent_Ex(FDCAN_HandleTypeDef *hfdcan,
+                                        uint32_t group_id,
+                                        int16_t current1, int16_t current2,
+                                        int16_t current3, int16_t current4);
+
 void Motor_SetAngleTarget(uint8_t motor_index, float target_angle, int16_t target_loop);
 void Motor_RecieveFeedback(FDCAN_RxHeaderTypeDef *RxHeader, uint8_t *RxData);
 

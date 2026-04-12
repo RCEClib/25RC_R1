@@ -127,13 +127,12 @@ int main(void)
   MX_TIM12_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+  FDCAN_Init(&hfdcan1);
+  FDCAN_Init(&hfdcan2);
   IMU_Init();
   ELRS_Init();
   Motor_Init();
-  FDCAN_Init(&hfdcan1);
-  FDCAN_Init(&hfdcan2);
   Serial_Init();
-  UART7_Init();
   // 初始化底盘控制
   Chassis_Rudder_Init(&chassis);
 
@@ -150,16 +149,11 @@ int main(void)
   while (1)
   {
     IMU_Task(1);
-
-
-    Serial_Printf("%.1f\n",imu_data.yaw);
-
-   // Serial_Printf("%f\n", motor_feedback[MOTOR_6020_ID1_INDEX + 3].angle);
+    //Serial_Printf("%f\n",imu_data.yaw);
+    Serial_Printf("%f\n", motor_feedback[MOTOR_3508_ID1_INDEX + 0].angle);
     // 测试不同的速度值
-    //Chassis_Rudder_Task(&chassis, 1, NORMAL_MODE, -20, 0, 0); // 较慢
-    //Chassis_Rudder_Task(&chassis, 1, NORMAL_MODE, 70, 0, 0); // 较快
     //Serial_Printf("%f,%f\n", target_speed, motor_feedback[MOTOR_3508_ID1_INDEX + 1].speed);//3508
-    // Serial_Printf("%f,%f,%f,%f\n", target_angle_deg, actual_angle,outspeed,speed_dps);//6020
+    //Serial_Printf("%f,%f,%f,%f\n", target_angle_deg, actual_angle,outspeed,speed_dps);//6020
 
     Chassis_Rudder_Task(&chassis, remoter.key.SA,
                       remoter.joy.l_x, remoter.joy.l_y, remoter.joy.r_y);

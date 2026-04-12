@@ -7,6 +7,7 @@ extern float target_speed;      // 轮速PID目标值（RPM）
 extern float actual_speed;      // 轮速PID反馈值（RPM）
 extern float outspeed;          // 舵向PID外环输出（度/秒）
 extern float speed_dps;         // 舵电机实际速度（度/秒）
+extern float feed_forward;      // 前馈值（度/秒）
 extern float actual_angle;      // 舵电机实际角度（度）
 extern float target_angle_deg;  // 舵电机目标角度（度）
 
@@ -34,7 +35,8 @@ typedef struct {
     float Target_Vx;          // 目标车体X速度（米/秒，向前为正）
     float Target_Vy;          // 目标车体Y速度（米/秒，向左为正）
     float Target_Wr;          // 目标自转角速度（弧度/秒，逆时针为正）
-    float spin_rate;   // 小陀螺自转角速度（弧度/秒，逆时针为正）
+    float spin_rate;          // 小陀螺自转角速度（弧度/秒，逆时针为正）
+    float feed_forward;       // 前馈值（度/秒）
 
     Incremental_PID_Controller_Group rudder_pid[4];   // 舵向级联PID（角度环+速度环）
     PID_Controller wheel_pid[4];                      // 轮向速度PID
