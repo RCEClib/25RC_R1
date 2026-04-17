@@ -21,6 +21,7 @@ float speed_dps;
 float feed_forward;
 float actual_angle;
 float target_angle_deg;
+volatile float yaw_rad;
 
 // 底盘几何参数（根据实际轮子和底盘尺寸调整）
 const float wheel_R = 0.1f;      // 轮子半径（米）
@@ -261,10 +262,10 @@ void Chassis_Rudder_Task(Chassis_Rudder_t *chassis, Chassis_Mode mode,
     if (fabsf(vw) < deadzone) vw = 0.0f;
 
     // 速度缩放：摇杆-100~100 → 实际速度
-    float max_linear_speed  = 1.5f;   // 最大线速度 1.5 m/s
-    float max_angular_speed = 5.0f;   // 最大角速度 5 rad/s
+    float max_linear_speed  = 3.8f;   // 最大线速度 1.5 m/s
+    float max_angular_speed = 6.0f;   // 最大角速度 5 rad/s
 
-    if (mode == GYRO_MODE) chassis->spin_rate = 4.0f;// 小陀螺模式下的固定转角速度 10 rad/s
+    if (mode == GYRO_MODE) chassis->spin_rate = 7.0f;// 小陀螺模式下的固定转角速度 10 rad/s
     else chassis->spin_rate = 0.0f;                  // 正常模式下，不固定转角速度
 
 
@@ -282,7 +283,7 @@ void Chassis_Rudder_Task(Chassis_Rudder_t *chassis, Chassis_Mode mode,
     float omega_total = omega_user + chassis->spin_rate;
 
     // 读取IMU当前车头朝向（与正北的夹角）
-    float yaw_rad = imu_data.yaw;   //返回弧度值 [0, 2π]
+    yaw_rad = imu_data.yaw;   //返回弧度值 [0, 2π]
 
     // 世界坐标系 → 车体坐标系（核心变换）
     // 无论车头朝向哪里，推摇杆的前就是正北，左就是正西

@@ -11,7 +11,8 @@
 #include <stdio.h>
 
 /* 外部函数声明 -------------------------------------------------------------- */
-extern void Motor_RecieveFeedback(FDCAN_RxHeaderTypeDef *RxHeader,
+extern void Motor_ReceiveFeedback(FDCAN_HandleTypeDef *hfdcan,
+                                  FDCAN_RxHeaderTypeDef *RxHeader,
                                   uint8_t *RxData);
 
 /**
@@ -180,7 +181,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan,
             HAL_OK) {
             // 如果是FDCAN1，调用电机反馈处理函数
             if (hfdcan == &hfdcan1 || hfdcan == &hfdcan3) {
-                Motor_RecieveFeedback(&RxHeader, RxData);
+                Motor_ReceiveFeedback(hfdcan, &RxHeader, RxData);
             }
         }
     }
@@ -206,7 +207,7 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan,
             HAL_OK) {
             // 如果是FDCAN2，可以在这里添加处理逻辑
             if (hfdcan == &hfdcan2) {
-                Motor_RecieveFeedback(&RxHeader, RxData);
+                Motor_ReceiveFeedback(hfdcan, &RxHeader, RxData);
                 // 预留接口：可以添加FDCAN2的数据处理
                 // 示例：打印接收到的数据（已注释）
                 // printf("fdcan2 callback\nID:%x Data:%x %x %x %x %x %x %x %x\n",

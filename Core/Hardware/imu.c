@@ -50,7 +50,7 @@ void IMU_Calculate(IMU_Data* imu_data) {
     float acc_roll = atan2f(-accel_x, sqrtf(accel_y * accel_y + accel_z * accel_z));
     float gyro_pitch = gyro_x  * dt;
     float gyro_roll  = gyro_y  * dt;
-    float gyro_yaw   = gyro_z  * dt;
+    float gyro_yaw   = gyro_z  * 2 * dt;
     imu_data->pitch =
         alpha * (imu_data->pitch + gyro_pitch) + (1 - alpha) * acc_pitch;
     imu_data->roll =

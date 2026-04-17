@@ -149,8 +149,8 @@ int main(void)
   while (1)
   {
     IMU_Task(1);
-    //Serial_Printf("%f\n",imu_data.yaw);
-    Serial_Printf("%f\n", motor_feedback[MOTOR_3508_ID1_INDEX + 0].angle);
+    Serial_Printf("%f,%f\n",imu_data.yaw,yaw_rad);
+    //Serial_Printf("%f\n", motor_feedback[MOTOR_3508_ID1_INDEX + 0].angle);
     // 测试不同的速度值
     //Serial_Printf("%f,%f\n", target_speed, motor_feedback[MOTOR_3508_ID1_INDEX + 1].speed);//3508
     //Serial_Printf("%f,%f,%f,%f\n", target_angle_deg, actual_angle,outspeed,speed_dps);//6020

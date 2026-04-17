@@ -10,6 +10,7 @@ extern float speed_dps;         // 舵电机实际速度（度/秒）
 extern float feed_forward;      // 前馈值（度/秒）
 extern float actual_angle;      // 舵电机实际角度（度）
 extern float target_angle_deg;  // 舵电机目标角度（度）
+extern volatile float yaw_rad;
 
 // 速度限制（可调）
 // #define MAX_LINEAR_SPEED   1.0f   // 最大线速度 (m/s)，根据底盘性能调整
