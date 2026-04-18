@@ -89,7 +89,7 @@ void Chassis_Rudder_Init(Chassis_Rudder_t *chassis) {
     chassis->wheel_direction_calibration[0] =  1;   // 左前
     chassis->wheel_direction_calibration[1] =  1;   // 左后
     chassis->wheel_direction_calibration[2] =  -1;   // 右后
-    chassis->wheel_direction_calibration[3] =  -1;   // 右前
+    chassis->wheel_direction_calibration[3] =  1;   // 右前
 
     // 验证并修正校准系数
     for (int i = 0; i < 4; i++) {
@@ -262,10 +262,10 @@ void Chassis_Rudder_Task(Chassis_Rudder_t *chassis, Chassis_Mode mode,
     if (fabsf(vw) < deadzone) vw = 0.0f;
 
     // 速度缩放：摇杆-100~100 → 实际速度
-    float max_linear_speed  = 3.8f;   // 最大线速度 1.5 m/s
-    float max_angular_speed = 6.0f;   // 最大角速度 5 rad/s
+    float max_linear_speed  = 1.8f;   // 最大线速度 1.5 m/s
+    float max_angular_speed = 5.0f;   // 最大角速度 5 rad/s
 
-    if (mode == GYRO_MODE) chassis->spin_rate = 7.0f;// 小陀螺模式下的固定转角速度 10 rad/s
+    if (mode == GYRO_MODE) chassis->spin_rate = 4.0f;// 小陀螺模式下的固定转角速度 10 rad/s
     else chassis->spin_rate = 0.0f;                  // 正常模式下，不固定转角速度
 
 

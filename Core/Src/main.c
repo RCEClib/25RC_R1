@@ -36,6 +36,8 @@
 #include "pid.h"
 #include "chassis_rudder.h"
 #include <string.h>
+
+#include "dg.h"
 #include "imu.h"
 #include "ws2812.h"
 
@@ -135,7 +137,8 @@ int main(void)
   Serial_Init();
   // 初始化底盘控制
   Chassis_Rudder_Init(&chassis);
-
+  //导轨初始化
+  dg_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -152,9 +155,9 @@ int main(void)
     Serial_Printf("%f,%f\n",imu_data.yaw,yaw_rad);
     //Serial_Printf("%f\n", motor_feedback[MOTOR_3508_ID1_INDEX + 0].angle);
     // 测试不同的速度值
-    //Serial_Printf("%f,%f\n", target_speed, motor_feedback[MOTOR_3508_ID1_INDEX + 1].speed);//3508
+    //Serial_Printf("%f,%f\n", target_speed, motor_feedback[MOTOR_3508_ID1_INDEX].speed);//3508
     //Serial_Printf("%f,%f,%f,%f\n", target_angle_deg, actual_angle,outspeed,speed_dps);//6020
-
+    dg_Task(remoter.key.SE);
     Chassis_Rudder_Task(&chassis, remoter.key.SA,
                       remoter.joy.l_x, remoter.joy.l_y, remoter.joy.r_y);
     HAL_Delay(0);

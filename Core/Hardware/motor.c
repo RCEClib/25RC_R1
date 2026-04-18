@@ -45,7 +45,7 @@ const Motor_Config_t motor_configs[] = {//////////////注释掉实际没有用�
     //{1, 0x202, MOTOR_2006, MOTOR_2006_ID2_INDEX},
     // {1, 0x203, MOTOR_2006, MOTOR_2006_ID3_INDEX},
     // {1, 0x204, MOTOR_2006, MOTOR_2006_ID4_INDEX},
-    //{1, 0x205, MOTOR_2006, MOTOR_2006_ID5_INDEX},
+    {1, 0x205, MOTOR_2006, MOTOR_2006_ID5_INDEX},
     // {1, 0x206, MOTOR_2006, MOTOR_2006_ID6_INDEX},
     // {1, 0x207, MOTOR_2006, MOTOR_2006_ID7_INDEX},
     // {1, 0x208, MOTOR_2006, MOTOR_2006_ID8_INDEX},

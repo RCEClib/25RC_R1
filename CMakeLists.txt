@@ -46,6 +46,7 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
         Core/APP/chassis_rudder.c
+        Core/APP/dg.c
 
         Core/BSP/BMI088driver.c
         Core/BSP/BMI088Middleware.c
