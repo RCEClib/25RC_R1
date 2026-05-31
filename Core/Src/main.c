@@ -32,14 +32,16 @@
 #include "YOU.h"
 #include "elrs.h"
 #include "fd.h"
-#include "motor.h"
+#include "DJI_Motor.h"
 #include "pid.h"
 #include "chassis_rudder.h"
 #include <string.h>
 
-#include "dg.h"
+#include "gripper.h"
 #include "imu.h"
+#include "scissor_lift.h"
 #include "ws2812.h"
+#include "ZDYZ_Motor.h"
 
 /* USER CODE END Includes */
 
@@ -128,17 +130,22 @@ int main(void)
   MX_USART10_UART_Init();
   MX_TIM12_Init();
   MX_TIM3_Init();
+  MX_TIM1_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
   FDCAN_Init(&hfdcan1);
   FDCAN_Init(&hfdcan2);
   IMU_Init();
   ELRS_Init();
-  Motor_Init();
+  DJI_Motor_Init();
+  ZDYZ_Init();
   Serial_Init();
   // 初始化底盘控制
   Chassis_Rudder_Init(&chassis);
-  //导轨初始化
-  dg_Init();
+  //导轨\舵机初始化
+  gripper_Init();
+  //剪式升降机构初始化
+  sl_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -152,12 +159,14 @@ int main(void)
   while (1)
   {
     IMU_Task(1);
-    Serial_Printf("%f,%f\n",imu_data.yaw,yaw_rad);
+    //Serial_Printf("%f,%f\n",imu_data.yaw,yaw_rad);
     //Serial_Printf("%f\n", motor_feedback[MOTOR_3508_ID1_INDEX + 0].angle);
+    //motor_abs_turns(1,remoter.var.S1,3000,150);
     // 测试不同的速度值
-    //Serial_Printf("%f,%f\n", target_speed, motor_feedback[MOTOR_3508_ID1_INDEX].speed);//3508
+    Serial_Printf("%f,%d\n", target_speed, motor_feedback[MOTOR_3508_ID5_INDEX].loop);//3508
     //Serial_Printf("%f,%f,%f,%f\n", target_angle_deg, actual_angle,outspeed,speed_dps);//6020
-    dg_Task(remoter.key.SE);
+    //gripper_Task(remoter.key.SE, remoter.key.SF, remoter.var.S1);
+    //scissor_lift_Task(remoter.key.SE);
     Chassis_Rudder_Task(&chassis, remoter.key.SA,
                       remoter.joy.l_x, remoter.joy.l_y, remoter.joy.r_y);
     HAL_Delay(0);

@@ -48,8 +48,8 @@ void IMU_Calculate(IMU_Data* imu_data) {
 
     float acc_pitch = atan2f(accel_y, accel_z);
     float acc_roll = atan2f(-accel_x, sqrtf(accel_y * accel_y + accel_z * accel_z));
-    float gyro_pitch = gyro_x  * dt;
-    float gyro_roll  = gyro_y  * dt;
+    float gyro_pitch = gyro_x  * 2 * dt;
+    float gyro_roll  = gyro_y  * 2 * dt;
     float gyro_yaw   = gyro_z  * 2 * dt;
     imu_data->pitch =
         alpha * (imu_data->pitch + gyro_pitch) + (1 - alpha) * acc_pitch;
@@ -60,8 +60,8 @@ void IMU_Calculate(IMU_Data* imu_data) {
     imu_data->yaw += gyro_yaw;
 
     // 归一化到 [0, 2PI)
-    if (imu_data->yaw >= 2*M_PI) imu_data->yaw -= 2*M_PI;
-    if (imu_data->yaw < 0.0f)    imu_data->yaw += 2*M_PI;
+    if (imu_data->yaw >= 2 * M_PI) imu_data->yaw -= 2 * M_PI;
+    if (imu_data->yaw < 0.0f)      imu_data->yaw += 2 * M_PI;
 
 
 }

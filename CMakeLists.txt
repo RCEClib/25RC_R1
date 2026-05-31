@@ -46,7 +46,8 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
         Core/APP/chassis_rudder.c
-        Core/APP/dg.c
+        Core/APP/gripper.c
+        Core/APP/scissor_lift.c
 
         Core/BSP/BMI088driver.c
         Core/BSP/BMI088Middleware.c
@@ -57,7 +58,9 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
         Core/Hardware/elrs.c
         Core/Hardware/imu.c
-        Core/Hardware/motor.c
+        Core/Hardware/DJI_Motor.c
+        Core/Hardware/ZDYZ_Motor.c
+        Core/Hardware/ZDYZ_smd.c
         Core/Hardware/YOU.c
 )
 

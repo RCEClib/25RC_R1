@@ -14,6 +14,8 @@ typedef struct {
 HAL_StatusTypeDef FDCAN_Init(FDCAN_HandleTypeDef *hfdcan);
 HAL_StatusTypeDef FDCAN_Send(FDCAN_HandleTypeDef *hfdcan, uint32_t id,
                              uint32_t idtype, uint8_t *data);
+HAL_StatusTypeDef FDCAN_Send_Var(FDCAN_HandleTypeDef *hfdcan, uint32_t id,
+                             uint32_t idtype, uint8_t *data, uint8_t len);
 HAL_StatusTypeDef FDCAN_Receive(FDCAN_HandleTypeDef *hfdcan,
                                 FDCAN_RxHeaderTypeDef *RxHeader,
                                 uint8_t *RxData);

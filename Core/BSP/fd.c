@@ -10,8 +10,10 @@
 
 #include <stdio.h>
 
+#include "ZDYZ_Motor.h"
+
 /* 外部函数声明 -------------------------------------------------------------- */
-extern void Motor_ReceiveFeedback(FDCAN_HandleTypeDef *hfdcan,
+extern void DJI_Motor_ReceiveFeedback(FDCAN_HandleTypeDef *hfdcan,
                                   FDCAN_RxHeaderTypeDef *RxHeader,
                                   uint8_t *RxData);
 
@@ -50,6 +52,23 @@ HAL_StatusTypeDef FDCAN_Init(FDCAN_HandleTypeDef *hfdcan) {
         return HAL_ERROR;
     }
 
+    //
+    // 配置扩展帧滤波器（索引1，掩码模式，接收所有扩展ID）
+    FDCAN_FilterTypeDef extFilter = {
+        .IdType       = FDCAN_EXTENDED_ID,
+        .FilterIndex  = 1,
+        .FilterType   = FDCAN_FILTER_MASK,
+        .FilterConfig = FDCAN_FILTER_TO_RXFIFO0,
+        .FilterID1    = 0x00000000,
+        .FilterID2    = 0x00000000   // 掩码全0，接收所有扩展ID
+    };
+
+    if (HAL_FDCAN_ConfigFilter(hfdcan, &extFilter) != HAL_OK) {
+        // debug_printf("extFilter config failed!\r\n");
+        return HAL_ERROR;
+    };
+
+
     // 配置全局滤波器：拒绝不匹配的标准ID、扩展ID和远程帧
     if (HAL_FDCAN_ConfigGlobalFilter(hfdcan, FDCAN_REJECT, FDCAN_REJECT,
                                      FDCAN_REJECT_REMOTE,
@@ -78,7 +97,7 @@ HAL_StatusTypeDef FDCAN_Init(FDCAN_HandleTypeDef *hfdcan) {
     }else if (hfdcan == &hfdcan3) {
         // 激活FDCAN3的FIFO1新消息中断
         if (HAL_FDCAN_ActivateNotification(
-                hfdcan, FDCAN_IT_RX_FIFO1_NEW_MESSAGE, 0) != HAL_OK) {
+                hfdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK) {
             return HAL_ERROR;
         }
     }
@@ -112,6 +131,53 @@ HAL_StatusTypeDef FDCAN_Send(FDCAN_HandleTypeDef *hfdcan, uint32_t id,
     // 将消息添加到发送FIFO队列
     return HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &txHeader, data);
 }
+
+
+
+/**                                              正点原子
+ * @brief  FDCAN发送数据函数（支持1~8字节可变长度）
+ * @param  hfdcan: FDCAN句柄指针
+ * @param  id: CAN消息ID
+ * @param  idtype: ID类型 (FDCAN_STANDARD_ID 或 FDCAN_EXTENDED_ID)
+ * @param  data: 要发送的数据指针（长度由 len 决定）
+ * @param  len:  实际数据长度（1~8字节）
+ * @retval HAL_OK: 发送成功
+ *         HAL_ERROR: 发送失败
+ */
+HAL_StatusTypeDef FDCAN_Send_Var(FDCAN_HandleTypeDef *hfdcan, uint32_t id,
+                             uint32_t idtype, uint8_t *data, uint8_t len)
+{
+    if (len == 0 || len > 8) return HAL_ERROR;
+
+    // 等待发送FIFO有空闲
+    while (HAL_FDCAN_GetTxFifoFreeLevel(hfdcan) == 0);
+
+    // 根据长度设置 DLC
+    FDCAN_TxHeaderTypeDef txHeader = {
+        .Identifier         = id,
+        .IdType             = idtype,
+        .TxFrameType        = FDCAN_DATA_FRAME,
+        .DataLength         = 0,
+        .BitRateSwitch      = FDCAN_BRS_OFF,
+        .FDFormat           = FDCAN_CLASSIC_CAN,
+        .TxEventFifoControl = FDCAN_NO_TX_EVENTS,
+        .MessageMarker      = 0
+    };
+    switch (len) {
+        case 1: txHeader.DataLength = FDCAN_DLC_BYTES_1; break;
+        case 2: txHeader.DataLength = FDCAN_DLC_BYTES_2; break;
+        case 3: txHeader.DataLength = FDCAN_DLC_BYTES_3; break;
+        case 4: txHeader.DataLength = FDCAN_DLC_BYTES_4; break;
+        case 5: txHeader.DataLength = FDCAN_DLC_BYTES_5; break;
+        case 6: txHeader.DataLength = FDCAN_DLC_BYTES_6; break;
+        case 7: txHeader.DataLength = FDCAN_DLC_BYTES_7; break;
+        case 8: txHeader.DataLength = FDCAN_DLC_BYTES_8; break;
+        default: return HAL_ERROR;
+    }
+     return HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &txHeader, data);////////////////////////
+}
+
+
 
 /**
  * @brief  FDCAN接收数据函数
@@ -181,7 +247,8 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan,
             HAL_OK) {
             // 如果是FDCAN1，调用电机反馈处理函数
             if (hfdcan == &hfdcan1 || hfdcan == &hfdcan3) {
-                Motor_ReceiveFeedback(hfdcan, &RxHeader, RxData);
+                DJI_Motor_ReceiveFeedback(hfdcan, &RxHeader, RxData);
+                handle_can_rx(hfdcan, FDCAN_RX_FIFO0);
             }
         }
     }
@@ -207,7 +274,8 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan,
             HAL_OK) {
             // 如果是FDCAN2，可以在这里添加处理逻辑
             if (hfdcan == &hfdcan2) {
-                Motor_ReceiveFeedback(hfdcan, &RxHeader, RxData);
+                DJI_Motor_ReceiveFeedback(hfdcan, &RxHeader, RxData);
+                handle_can_rx(hfdcan, FDCAN_RX_FIFO1);
                 // 预留接口：可以添加FDCAN2的数据处理
                 // 示例：打印接收到的数据（已注释）
                 // printf("fdcan2 callback\nID:%x Data:%x %x %x %x %x %x %x %x\n",

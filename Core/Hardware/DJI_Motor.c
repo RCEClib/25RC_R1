@@ -7,7 +7,7 @@
  *          索引范围：3508(0-7), 6020(8-14), 2006(15-22)
  */
 
-#include "motor.h"
+#include "DJI_Motor.h"
 #include "fd.h"          // 包含 hfdcan1/2/3 的声明
 #include "Serial.h"      // 调试打印（可根据需要保留或删除）
 
@@ -46,7 +46,7 @@ const Motor_Config_t motor_configs[] = {//////////////注释掉实际没有用�
     // {1, 0x203, MOTOR_2006, MOTOR_2006_ID3_INDEX},
     // {1, 0x204, MOTOR_2006, MOTOR_2006_ID4_INDEX},
     {1, 0x205, MOTOR_2006, MOTOR_2006_ID5_INDEX},
-     {1, 0x206, MOTOR_2006, MOTOR_2006_ID6_INDEX},
+    {1, 0x206, MOTOR_2006, MOTOR_2006_ID6_INDEX},
     // {1, 0x207, MOTOR_2006, MOTOR_2006_ID7_INDEX},
     // {1, 0x208, MOTOR_2006, MOTOR_2006_ID8_INDEX},
 };
@@ -77,7 +77,7 @@ static uint8_t is_can_initialized(FDCAN_HandleTypeDef *hfdcan) {
 }
 
 /* =========================== 电机初始化 =========================== */
-HAL_StatusTypeDef Motor_Init(void) {
+HAL_StatusTypeDef DJI_Motor_Init(void) {
     // 1. 初始化反馈数组（清零）
     memset(motor_feedback, 0, sizeof(motor_feedback));
 
@@ -97,7 +97,7 @@ HAL_StatusTypeDef Motor_Init(void) {
     for (int i = 0; i < 3; i++) {
         if (is_can_initialized(can_handles[i])) {
             for (int j = 0; j < num_groups; j++) {
-                Motor_SendCurrent_Ex(can_handles[i], all_group_ids[j], 0, 0, 0, 0);
+                DJI_Motor_SendCurrent_Ex(can_handles[i], all_group_ids[j], 0, 0, 0, 0);
             }
         }
     }
@@ -107,7 +107,7 @@ HAL_StatusTypeDef Motor_Init(void) {
 }
 
 /* =========================== 电流发送函数 =========================== */
-HAL_StatusTypeDef Motor_SendCurrent_Ex(FDCAN_HandleTypeDef *hfdcan,
+HAL_StatusTypeDef DJI_Motor_SendCurrent_Ex(FDCAN_HandleTypeDef *hfdcan,
                                         uint32_t group_id,
                                         int16_t current1, int16_t current2,
                                         int16_t current3, int16_t current4) {
@@ -124,7 +124,7 @@ HAL_StatusTypeDef Motor_SendCurrent_Ex(FDCAN_HandleTypeDef *hfdcan,
 }
 
 /* =========================== 角度目标设置 =========================== */
-void Motor_SetAngleTarget(uint8_t motor_index, float target_angle, int16_t target_loop) {
+void DJI_Motor_SetAngleTarget(uint8_t motor_index, float target_angle, int16_t target_loop) {
     if (motor_index >= MOTOR_NUM) return;
     Motor_Feedback_t *fb = &motor_feedback[motor_index];
     fb->angle_target = target_angle;
@@ -141,7 +141,7 @@ void Motor_SetAngleTarget(uint8_t motor_index, float target_angle, int16_t targe
 }
 
 /* =========================== 反馈接收函数（核心，查表方式） =========================== */
-void Motor_ReceiveFeedback(FDCAN_HandleTypeDef *hfdcan,
+void DJI_Motor_ReceiveFeedback(FDCAN_HandleTypeDef *hfdcan,
                             FDCAN_RxHeaderTypeDef *RxHeader,
                             uint8_t *RxData) {
     uint32_t id = RxHeader->Identifier;

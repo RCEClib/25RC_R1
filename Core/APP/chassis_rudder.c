@@ -5,7 +5,7 @@
 #include "elrs.h"
 #include "fdcan.h"
 #include "imu.h"
-#include "motor.h"
+#include "DJI_Motor.h"
 #include "pid.h"
 #include "Serial.h"
 
@@ -102,14 +102,15 @@ void Chassis_Rudder_Init(Chassis_Rudder_t *chassis) {
         // 外层：角度环（输入：度，输出：度/秒）
         Incremental_PID_Init(&chassis->rudder_pid[i].outer, 12.4f, 0.0f, 0.0f, 3000.0f, 3600.0f);
         // 内层：速度环（输入：度/秒，输出：电流）
-        Incremental_PID_Init(&chassis->rudder_pid[i].inner, 12.0f, 0.25f, 1.7f, 10000.0f, 30000.0f);
+        //Incremental_PID_Init(&chassis->rudder_pid[i].inner, 12.0f, 0.25f, 1.7f, 10000.0f, 30000.0f);//正常电机参数
+        Incremental_PID_Init(&chassis->rudder_pid[i].inner, 3.9f, 0.25f, 1.7f, 10000.0f, 30000.0f);//机械损伤电机参数
         // 初始化轮向PID（位置式速度环，输入：RPM，输出：电流）
         PID_Init(&chassis->wheel_pid[i], 2.1f, 0.7f, 0.1f, 16384.0f, 1000.0f);
     }
 
     // 发送零电流，使电机处于待机状态
-    Motor_SendCurrent_Ex(&hfdcan2,MOTOR_6020_GROUP1, 0, 0, 0, 0);
-    Motor_SendCurrent_Ex(&hfdcan1,MOTOR_3508_GROUP1, 0, 0, 0, 0);
+    DJI_Motor_SendCurrent_Ex(&hfdcan2,MOTOR_6020_GROUP1, 0, 0, 0, 0);
+    DJI_Motor_SendCurrent_Ex(&hfdcan1,MOTOR_3508_GROUP1, 0, 0, 0, 0);
 }
 
 // ============================ 运动学解算（核心） ============================
@@ -233,10 +234,10 @@ void Chassis_Rudder_Control(Chassis_Rudder_t *chassis) {
     }
 
     // 发送电流指令
-    Motor_SendCurrent_Ex(&hfdcan2,MOTOR_6020_GROUP1,
+    DJI_Motor_SendCurrent_Ex(&hfdcan2,MOTOR_6020_GROUP1,
             chassis->rudder_currents[0], chassis->rudder_currents[1],
             chassis->rudder_currents[2], chassis->rudder_currents[3]);
-    Motor_SendCurrent_Ex(&hfdcan1,MOTOR_3508_GROUP1,
+    DJI_Motor_SendCurrent_Ex(&hfdcan1,MOTOR_3508_GROUP1,
             chassis->wheel_currents[0], chassis->wheel_currents[1],
             chassis->wheel_currents[2], chassis->wheel_currents[3]);
 }
@@ -261,18 +262,15 @@ void Chassis_Rudder_Task(Chassis_Rudder_t *chassis, Chassis_Mode mode,
     if (fabsf(vy) < deadzone) vy = 0.0f;
     if (fabsf(vw) < deadzone) vw = 0.0f;
 
-    // 速度缩放：摇杆-100~100 → 实际速度
-    float max_linear_speed  = 1.8f;   // 最大线速度 1.5 m/s
-    float max_angular_speed = 5.0f;   // 最大角速度 5 rad/s
 
     if (mode == GYRO_MODE) chassis->spin_rate = 4.0f;// 小陀螺模式下的固定转角速度 10 rad/s
     else chassis->spin_rate = 0.0f;                  // 正常模式下，不固定转角速度
 
 
     // 世界坐标系下的期望平移速度（单位：m/s）
-    float vx_world = vx / 100.0f * max_linear_speed;   // 向正北的速度分量
-    float vy_world = vy / 100.0f * max_linear_speed;   // 向正西的速度分量
-    float omega_user = vw / 100.0f * max_angular_speed;// 遥控器给出的角速度（单位：rad/s）
+    float vx_world   = vx / 100.0f * MAX_LINEAR_SPEED;   // 向正北的速度分量
+    float vy_world   = vy / 100.0f * MAX_LINEAR_SPEED;   // 向正西的速度分量
+    float omega_user = vw / 100.0f * MAX_ANGULAR_SPEED;// 遥控器给出的角速度（单位：rad/s）
 
 
     //小陀螺模式：固定自转速度 + 遥控器额外角速度
@@ -320,13 +318,13 @@ void Chassis_Rudder_Task(Chassis_Rudder_t *chassis, Chassis_Mode mode,
                 break;
             case STOP_MODE:
             default:
-                Motor_SendCurrent_Ex(&hfdcan2,MOTOR_6020_GROUP1, 0, 0, 0, 0);
-                Motor_SendCurrent_Ex(&hfdcan1,MOTOR_3508_GROUP1, 0, 0, 0, 0);
+                DJI_Motor_SendCurrent_Ex(&hfdcan2,MOTOR_6020_GROUP1, 0, 0, 0, 0);
+                DJI_Motor_SendCurrent_Ex(&hfdcan1,MOTOR_3508_GROUP1, 0, 0, 0, 0);
                 break;
         }
     } else {
         // 未使能，发送零电流
-        Motor_SendCurrent_Ex(&hfdcan2,MOTOR_6020_GROUP1, 0, 0, 0, 0);
-        Motor_SendCurrent_Ex(&hfdcan1,MOTOR_3508_GROUP1, 0, 0, 0, 0);
+        DJI_Motor_SendCurrent_Ex(&hfdcan2,MOTOR_6020_GROUP1, 0, 0, 0, 0);
+        DJI_Motor_SendCurrent_Ex(&hfdcan1,MOTOR_3508_GROUP1, 0, 0, 0, 0);
     }
 }
