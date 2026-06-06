@@ -160,10 +160,10 @@ int main(void)
   {
     IMU_Task(1);
     //Serial_Printf("%f,%f\n",imu_data.yaw,yaw_rad);
-    //Serial_Printf("%f\n", motor_feedback[MOTOR_3508_ID1_INDEX + 0].angle);
+    Serial_Printf("%f\n", motor_feedback[MOTOR_6020_ID4_INDEX].angle);
     //motor_abs_turns(1,remoter.var.S1,3000,150);
     // 测试不同的速度值
-    Serial_Printf("%f,%d\n", target_speed, motor_feedback[MOTOR_3508_ID5_INDEX].loop);//3508
+    //Serial_Printf("%f,%d\n", target_speed, motor_feedback[MOTOR_3508_ID5_INDEX].loop);//3508
     //Serial_Printf("%f,%f,%f,%f\n", target_angle_deg, actual_angle,outspeed,speed_dps);//6020
     //gripper_Task(remoter.key.SE, remoter.key.SF, remoter.var.S1);
     //scissor_lift_Task(remoter.key.SE);

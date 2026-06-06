@@ -17,10 +17,10 @@ extern volatile float yaw_rad;
 #define MAX_ANGULAR_SPEED  5.0f   // 最大角速度 (rad/s)
 
 // 顺序：0-左前，1-左后，2-右后，3-右前（逆时针）
-#define MOTOR0CENTER 92.7690f   // 左前舵轮零点
-#define MOTOR1CENTER 213.2230f   // 左后舵轮零点
-#define MOTOR2CENTER 303.003f   // 右后舵轮零点
-#define MOTOR3CENTER 328.0960f   // 右前舵轮零点
+#define MOTOR0CENTER 23.1592f   // 左前舵轮零点
+#define MOTOR1CENTER 145.9863f   // 左后舵轮零点
+#define MOTOR2CENTER 116.4990f   // 右后舵轮零点
+#define MOTOR3CENTER 98.0420f   // 右前舵轮零点
 
 #define RAD2DEG (180.0f / M_PI)    // 弧度 → 角度 (180/PI)
 #define DEG2RAD (M_PI / 180.0f)    // 角度 → 弧度 (PI/180)
