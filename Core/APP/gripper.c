@@ -14,7 +14,7 @@ float target_total_angle_id5, target_total_angle_id6;      // 目标总角度（
 float actual_total_angle_id5, actual_total_angle_id6;      // 实际总角度（度）—— 当前值
 
 // 2006电机减速比（电机转36圈，轮子转1圈）
-#define MOTOR_2006_GEAR_RATIO  36.0f
+#define MOTOR_2006_GEAR_RATIO  19.0f
 
 /**
  * @brief  夹爪初始化函数
@@ -28,8 +28,8 @@ void gripper_Init(void) {
     HAL_Delay(100);  // 确保CAN接收到了至少一帧数据
 
     // 读取当前实际总角度（转子角度）
-    float init_total_id5 = motor_feedback[MOTOR_2006_ID5_INDEX].loop * 360.0f
-                           + motor_feedback[MOTOR_2006_ID5_INDEX].angle;
+    float init_total_id5 = motor_feedback[MOTOR_3508_ID5_INDEX].loop * 360.0f
+                           + motor_feedback[MOTOR_3508_ID5_INDEX].angle;
     float init_total_id6 = motor_feedback[MOTOR_2006_ID6_INDEX].loop * 360.0f
                            + motor_feedback[MOTOR_2006_ID6_INDEX].angle;
 
@@ -38,8 +38,8 @@ void gripper_Init(void) {
     target_total_angle_id6 = init_total_id6 * MOTOR_2006_GEAR_RATIO;
 
     // 初始化 ID5 的 PID
-    PID_Init(&dg_pid_id5.outer, 3.0f, 1.2f, 0.0f, 8000.0f, 600.0f);
-    PID_Init(&dg_pid_id5.inner, 1.3f, 0.06f, 0.2f, 10000.0f, 3000.0f);
+    PID_Init(&dg_pid_id5.outer, 1.0f, 1.2f, 2.3f, 8000.0f, 600.0f);
+    PID_Init(&dg_pid_id5.inner, 0.7f, 0.06f, 1.7f, 10000.0f, 3000.0f);
 
     // 初始化 ID6 的 PID
     PID_Init(&dg_pid_id6.outer, 0.7f, 0.4f, 0.2f, 3000.0f, 600.0f);
@@ -72,8 +72,8 @@ void dg_SetTarget_ID6(int16_t loop, float angle) {
  */
 void dg_Control(void) {
     // 实际总角度（转子角度）
-    float actual_total_id5 = motor_feedback[MOTOR_2006_ID5_INDEX].loop * 360.0f
-                             + motor_feedback[MOTOR_2006_ID5_INDEX].angle;
+    float actual_total_id5 = motor_feedback[MOTOR_3508_ID5_INDEX].loop * 360.0f
+                             + motor_feedback[MOTOR_3508_ID5_INDEX].angle;
     float actual_speed_id5 = motor_feedback[MOTOR_2006_ID5_INDEX].speed;
 
     float current_id5 = pid_CascadeCalc(&dg_pid_id5,
@@ -96,7 +96,7 @@ void dg_Control(void) {
     if (current_id6 < -10000.0f) current_id6 = -10000.0f;
 
     // 一次性发送两个电流到 CAN 组（ID5 对应通道0，ID6 对应通道1）
-    DJI_Motor_SendCurrent_Ex(&hfdcan1, MOTOR_2006_GROUP2,
+    DJI_Motor_SendCurrent_Ex(&hfdcan1, MOTOR_3508_GROUP2,
                          (int16_t)current_id5,   // 电机1
                          (int16_t)current_id6,   // 电机2
                          0, 0);
@@ -128,7 +128,7 @@ void gripper_Task(uint8_t mode1, uint8_t mode2, float angle) {
     int valid = 1;
     switch (mode1) {
         case 0:dg_SetTarget_ID5(0, 0.0f);break;
-        case 1:dg_SetTarget_ID5(3, 90.0f);break;
+        case 1:dg_SetTarget_ID5(10, 90.0f);break;
         default:valid = 0; break;
     }
     switch (mode2) {

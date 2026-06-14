@@ -86,8 +86,8 @@ void Chassis_Rudder_Init(Chassis_Rudder_t *chassis) {
     chassis->rudder_direction_calibration[3] =  1;  // 右前
 
     // 轮向电机方向校准（根据实际接线调整）
-    chassis->wheel_direction_calibration[0] =  1;   // 左前
-    chassis->wheel_direction_calibration[1] =  1;   // 左后
+    chassis->wheel_direction_calibration[0] =  -1;   // 左前
+    chassis->wheel_direction_calibration[1] =  -1;   // 左后
     chassis->wheel_direction_calibration[2] =  -1;   // 右后
     chassis->wheel_direction_calibration[3] =  1;   // 右前
 
@@ -103,7 +103,7 @@ void Chassis_Rudder_Init(Chassis_Rudder_t *chassis) {
         Incremental_PID_Init(&chassis->rudder_pid[i].outer, 12.4f, 0.0f, 0.0f, 3000.0f, 3600.0f);
         // 内层：速度环（输入：度/秒，输出：电流）
         //Incremental_PID_Init(&chassis->rudder_pid[i].inner, 12.0f, 0.25f, 1.7f, 10000.0f, 30000.0f);//正常电机参数
-        Incremental_PID_Init(&chassis->rudder_pid[i].inner, 3.9f, 0.25f, 1.7f, 10000.0f, 30000.0f);//机械损伤电机参数
+        Incremental_PID_Init(&chassis->rudder_pid[i].inner, 2.9f, 0.25f, 1.7f, 10000.0f, 30000.0f);//机械损伤电机参数
         // 初始化轮向PID（位置式速度环，输入：RPM，输出：电流）
         PID_Init(&chassis->wheel_pid[i], 2.1f, 0.7f, 0.1f, 16384.0f, 1000.0f);
     }
