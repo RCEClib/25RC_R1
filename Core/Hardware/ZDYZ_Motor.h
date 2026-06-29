@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "ZDYZ_smd.h"          /* 正点原子官方驱动 */
-#include "fd.h"        /* 获取到位状态 */
+#include "bsp_fdcan.h"        /* 获取到位状态 */
 #define MOTOR_ADDR   1
 
 // 用户协议接收缓冲区

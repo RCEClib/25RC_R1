@@ -8,7 +8,7 @@
  */
 
 #include "DJI_Motor.h"
-#include "fd.h"          // 包含 hfdcan1/2/3 的声明
+#include "bsp_fdcan.h"          // 包含 hfdcan1/2/3 的声明
 #include "Serial.h"      // 调试打印（可根据需要保留或删除）
 
 #include <string.h>
@@ -27,7 +27,7 @@ const Motor_Config_t motor_configs[] = {//////////////注释掉实际没有用�
     {1, 0x203, MOTOR_3508, MOTOR_3508_ID3_INDEX},
     {1, 0x204, MOTOR_3508, MOTOR_3508_ID4_INDEX},
     {1, 0x205, MOTOR_3508, MOTOR_3508_ID5_INDEX},
-    // {1, 0x206, MOTOR_3508, MOTOR_3508_ID6_INDEX},
+    {1, 0x206, MOTOR_3508, MOTOR_3508_ID6_INDEX},
     // {1, 0x207, MOTOR_3508, MOTOR_3508_ID7_INDEX},
     // {1, 0x208, MOTOR_3508, MOTOR_3508_ID8_INDEX},
 
@@ -120,7 +120,9 @@ HAL_StatusTypeDef DJI_Motor_SendCurrent_Ex(FDCAN_HandleTypeDef *hfdcan,
     data[5] = current3;
     data[6] = current4 >> 8;
     data[7] = current4;
-    return FDCAN_Send(hfdcan, group_id, FDCAN_STANDARD_ID, data);
+
+    uint8_t ret = fdcanx_send_data(hfdcan, (uint16_t)group_id, data, 8);
+    return (ret == 0) ? HAL_OK : HAL_ERROR;
 }
 
 /* =========================== 角度目标设置 =========================== */

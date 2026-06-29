@@ -13,7 +13,7 @@ typedef struct {
 
 HAL_StatusTypeDef IMU_Init(void);
 
-void IMU_Task(uint8_t temp_key);
+void IMU_Task(uint8_t EN, uint8_t temp_key);
 
 extern IMU_Data imu_data;
 

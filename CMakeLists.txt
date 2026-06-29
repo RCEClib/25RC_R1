@@ -51,13 +51,15 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
         Core/BSP/BMI088driver.c
         Core/BSP/BMI088Middleware.c
-        Core/BSP/fd.c
+        Core/BSP/bsp_fdcan.c
         Core/BSP/pid.c
         Core/BSP/Serial.c
         Core/BSP/ws2812.c
 
         Core/Hardware/elrs.c
         Core/Hardware/imu.c
+        Core/Hardware/dm_motor_ctrl.c
+        Core/Hardware/dm_motor_drv.c
         Core/Hardware/DJI_Motor.c
         Core/Hardware/ZDYZ_Motor.c
         Core/Hardware/ZDYZ_smd.c

@@ -26,6 +26,7 @@ float err_l  = 0;
 float err_ll = 0;
 
 HAL_StatusTypeDef IMU_Init(void) {
+
     imu_data.roll    = 0;
     imu_data.pitch   = 0;
     imu_data.yaw     = 0;
@@ -77,7 +78,19 @@ void IMU_TempCtrl(float temp) {
     htim3.Instance->CCR4 = (uint16_t)out;
 }
 
-void IMU_Task(uint8_t temp_key) {
+void IMU_Task(uint8_t EN, uint8_t temp_key) {
+    static uint8_t flag = 1;
+
+    if (EN == 0) {
+        flag = 1;       // 下次 EN=1 时重新初始化
+        imu_data.yaw = 0;
+        return;
+    }
+
+    if (flag == 1) {
+        flag = 0;
+        IMU_Init();
+    }
     imu_data.TempKey = temp_key;
     BMI088_read(imu_data.gyro, imu_data.accel, &imu_data.temp);// 读取原始数据
     IMU_TempCtrl(imu_data.temp);// 温度控制

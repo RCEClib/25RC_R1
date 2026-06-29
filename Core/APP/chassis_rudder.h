@@ -13,13 +13,13 @@ extern float target_angle_deg;  // 舵电机目标角度（度）
 extern volatile float yaw_rad;
 
 // 速度限制（可调）
-#define MAX_LINEAR_SPEED   1.8f   // 最大线速度 (m/s)，根据底盘性能调整
-#define MAX_ANGULAR_SPEED  5.0f   // 最大角速度 (rad/s)
+#define MAX_LINEAR_SPEED   4.0f   // 最大线速度 (m/s)，根据底盘性能调整
+#define MAX_ANGULAR_SPEED  7.0f   // 最大角速度 (rad/s)
 
 // 顺序：0-左前，1-左后，2-右后，3-右前（逆时针）
 #define MOTOR0CENTER 57.2f   // 左前舵轮零点
 #define MOTOR1CENTER 115.6f   // 左后舵轮零点
-#define MOTOR2CENTER 267.2f   // 右后舵轮零点
+#define MOTOR2CENTER 236.3f   // 右后舵轮零点
 #define MOTOR3CENTER 55.7f   // 右前舵轮零点
 
 #define RAD2DEG (180.0f / M_PI)    // 弧度 → 角度 (180/PI)

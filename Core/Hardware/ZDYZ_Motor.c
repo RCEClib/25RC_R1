@@ -225,7 +225,7 @@ uint8_t can_send_long_msg( FDCAN_HandleTypeDef *hfdcan, uint32_t id,uint32_t typ
          uint8_t data8[8] = {0};
          memcpy(data8, data + offset, send_len);
 
-         if (FDCAN_Send_Var(hfdcan, id, FDCAN_EXTENDED_ID, data8, send_len) != 0) {
+         if (fdcanx_send_data(hfdcan, id, data8, send_len) != 0) {
              return 1;
          }
          offset += send_len;

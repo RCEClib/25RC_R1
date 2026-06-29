@@ -24,7 +24,7 @@
 #include "ZDYZ_smd.h"
 
 #include "string.h"
-#include "fd.h"
+#include "bsp_fdcan.h"
 #include "ZDYZ_Motor.h"
 
 /* 添加联合体 便于存储浮点数 */

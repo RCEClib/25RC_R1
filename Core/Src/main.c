@@ -31,7 +31,7 @@
 #include "Serial.h"
 #include "YOU.h"
 #include "elrs.h"
-#include "fd.h"
+#include "bsp_fdcan.h"
 #include "DJI_Motor.h"
 #include "pid.h"
 #include "chassis_rudder.h"
@@ -133,9 +133,14 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
-  FDCAN_Init(&hfdcan1);
-  FDCAN_Init(&hfdcan2);
-  IMU_Init();
+  bsp_fdcan_set_baud(&hfdcan1, CAN_CLASS, CAN_BR_1M);
+  bsp_fdcan_set_baud(&hfdcan2, CAN_CLASS, CAN_BR_1M);
+  bsp_fdcan_set_baud(&hfdcan3, CAN_CLASS, CAN_BR_1M);
+  bsp_can_init(&hfdcan1);
+  bsp_can_init(&hfdcan2);
+  bsp_can_init(&hfdcan3);
+
+  //IMU_Init();
   ELRS_Init();
   DJI_Motor_Init();
   ZDYZ_Init();
@@ -143,7 +148,7 @@ int main(void)
   // 初始化底盘控制
   Chassis_Rudder_Init(&chassis);
   //导轨\舵机初始化
-  gripper_Init();
+  //gripper_Init();
   //剪式升降机构初始化
   sl_Init();
   /* USER CODE END 2 */
@@ -158,15 +163,16 @@ int main(void)
 
   while (1)
   {
-    IMU_Task(1);
+    IMU_Task(remoter.key.SE,1);
     //Serial_Printf("%f,%f\n",imu_data.yaw,yaw_rad);
     //Serial_Printf("%d\n", motor_feedback[MOTOR_3508_ID5_INDEX].loop/19);
     //motor_abs_turns(1,remoter.var.S1,3000,150);
     // 测试不同的速度值
-    //Serial_Printf("%f\n", motor_feedback[MOTOR_6020_ID4_INDEX].angle);//校准0位
-    Serial_Printf("%f,%f,%f,%f\n", target_angle_deg, actual_angle,outspeed,speed_dps);//6020
+    Serial_Printf("%f\n", motor_feedback[MOTOR_6020_ID3_INDEX].angle);//校准0位
+    //Serial_Printf("%f,%f,%f,%f\n", target_angle_deg, actual_angle,outspeed,speed_dps);//6020
     //gripper_Task(1, remoter.key.SF, remoter.var.S1);
-    scissor_lift_Task(remoter.key.SE);
+    scissor_lift_Task(remoter.var.S1,remoter.key.SB);
+    //scissor_lift_Task(10);
     Chassis_Rudder_Task(&chassis, remoter.key.SA,
                       remoter.joy.l_x, remoter.joy.l_y, remoter.joy.r_y);
     HAL_Delay(0);

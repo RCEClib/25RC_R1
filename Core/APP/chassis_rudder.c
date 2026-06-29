@@ -283,6 +283,8 @@ void Chassis_Rudder_Task(Chassis_Rudder_t *chassis, Chassis_Mode mode,
     // 读取IMU当前车头朝向（与正北的夹角）
     yaw_rad = imu_data.yaw;   //返回弧度值 [0, 2π]
 
+    //Serial_Printf("%f\n", yaw_rad);
+
     // 世界坐标系 → 车体坐标系（核心变换）
     // 无论车头朝向哪里，推摇杆的前就是正北，左就是正西
     float cos_yaw = cosf(yaw_rad);
