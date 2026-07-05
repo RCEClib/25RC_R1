@@ -263,7 +263,7 @@ void Chassis_Rudder_Task(Chassis_Rudder_t *chassis, Chassis_Mode mode,
     if (fabsf(vw) < deadzone) vw = 0.0f;
 
 
-    if (mode == GYRO_MODE) chassis->spin_rate = 4.0f;// 小陀螺模式下的固定转角速度 10 rad/s
+    if (mode == GYRO_MODE) chassis->spin_rate = 5.0f;// 小陀螺模式下的固定转角速度 10 rad/s
     else chassis->spin_rate = 0.0f;                  // 正常模式下，不固定转角速度
 
 

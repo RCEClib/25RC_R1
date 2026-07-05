@@ -279,7 +279,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
         {
             // motor[i].id    : 该电机的CAN反馈ID（通常为0x01~0x0F）
             // motor[i].hcan  : 该电机所连接的CAN口句柄
-            if (motor[i].id == rec_id && motor[i].hcan == hfdcan)
+            if (motor[i].mst_id == rec_id && motor[i].hcan == hfdcan)
             {
                 // 解析反馈数据（位置、速度、扭矩、温度等）
                 dm_motor_fbdata(&motor[i], rx_data);

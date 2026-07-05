@@ -1,105 +1,51 @@
 #include "dm_motor_drv.h"
 #include "dm_motor_ctrl.h"
 #include "string.h"
-#include "stdbool.h"
 
 motor_t motor[num];
 
-// �����ʼ�����ñ�ֻ������̬����������ʱ�ᱻ�޸ĵ��ֶβ���Ҫ�������
-static const motor_t motor_init_config[num] = {
-    [Motor1] = {
-        .hcan = &hfdcan2,
-        .id = 0x01,
-        .mst_id = 0x00,
-        .ctrl = {
-            .mode = psi_mode,
-            .pos_set = 6.28f,
-            .vel_set = 3.0f,
-            .tor_set = 3.0f,
-            .cur_set = 0.2f,
-            .kp_set = 50.0f,
-            .kd_set = 1.0f,
-        },
-        .tmp = {
-            .read_flag = 1,
-            .PMAX = 12.5f,
-            .VMAX = 30.0f,
-            .TMAX = 10.0f,
-        },
-    },
-    [Motor2] = {
-        .hcan = &hfdcan2,
-        .id = 0x02,
-        .ctrl = {
-            .mode = psi_mode,
-            .pos_set = 0.0f,
-            .vel_set = 0.0f,
-            .cur_set = 0.02f,
-        },
-        .tmp = {
-            .read_flag = 1,
-            .PMAX = 12.5f,
-            .VMAX = 30.0f,
-            .TMAX = 10.0f,
-        },
-    },
-	[Motor3] = {
-    	.hcan = &hfdcan2,
-		.id = 0x02,
-		.ctrl = {
-			.mode = psi_mode,
-			.pos_set = 0.0f,
-			.vel_set = 0.0f,
-			.cur_set = 0.02f,
-		},
-			.tmp = {
-			.read_flag = 1,
-			.PMAX = 12.5f,
-			.VMAX = 30.0f,
-			.TMAX = 10.0f,
-			},
-	},
-    [Motor4] = {
-        .hcan = &hfdcan2,
-        .id = 0x02,
-        .ctrl.mode = psi_mode,
-        .ctrl.cur_set = 0.02f,
-        .tmp = { .read_flag = 1, .PMAX = 12.5f, .VMAX = 30.0f, .TMAX = 10.0f },
-    },
-    [Motor5] = {
-        .hcan = &hfdcan2,
-        .id = 0x01,
-        .ctrl.mode = psi_mode,
-        .ctrl.cur_set = 0.02f,
-        .tmp = { .read_flag = 1, .PMAX = 12.5f, .VMAX = 30.0f, .TMAX = 10.0f },
-    },
-    [Motor6] = {
-        .hcan = &hfdcan2,
-        .id = 0x02,
-        .ctrl.mode = psi_mode,
-        .ctrl.cur_set = 0.02f,
-        .tmp = { .read_flag = 1, .PMAX = 12.5f, .VMAX = 30.0f, .TMAX = 10.0f },
-    },
-    // ���� Motor7, Motor8, Motor9...
-};
-
-
-/**
-************************************************************************
-* @brief:      	dm4310_motor_init: DM4310�����ʼ������
-* @param:      	void
-* @retval:     	void
-* @details:    	��ʼ��1��DM4310�ͺŵĵ��������Ĭ�ϲ����Ϳ���ģʽ��
-*               ����ID������ģʽ������ģʽ����Ϣ��
-************************************************************************
-**/
-void dm_motor_init(void)
+typedef union
 {
-    for (int i = 0; i < num; i++) {
-        // ֱ�ӽ����ñ�����ݸ��Ƶ� motor �ṹ����
-        motor[i] = motor_init_config[i];
-    }
+    float f_val;
+    uint32_t u_val;
+    uint8_t b_val[4];
+} float_type_u;
+
+
+void dm_motor_init(motor_num id, FDCAN_HandleTypeDef *hcan, uint16_t can_id,mode_e mode){
+    memset(&motor[id], 0, sizeof(motor[id]));    // 初始化电机结构体
+
+    // 设置电机信息
+	motor[id].hcan = hcan;
+    motor[id].id = can_id;
+    motor[id].mst_id = can_id + 0x10;   // 反馈帧CAN ID = 命令ID + 0x10（MIT模式）
+    motor[id].tmp.read_flag = 1;
+    motor[id].ctrl.mode     = mode;    // 选择位置速度模式
+    motor[id].ctrl.vel_set  = 0.0f;        // 设置速度
+    motor[id].ctrl.pos_set  = 0.0f;       // 设置位置
+    motor[id].ctrl.tor_set  = 0.0f;
+    motor[id].ctrl.cur_set  = 0.03f;      // 设置电流为0.03，该值为标幺值
+    motor[id].ctrl.kp_set   = 0.0f;        
+    motor[id].ctrl.kd_set   = 0.0f;
+    // DM4310的 PMAX VMAX TMAX
+    motor[id].tmp.PMAX      = 12.5f;
+    motor[id].tmp.VMAX      = 30.0f;
+    motor[id].tmp.TMAX      = 10.0f;
+	
+    motor[id].tmp.read_flag = 0;    // 不使用寄存器读取，防止MIT反馈误触发receive_motor_data破坏参数
+
+    dm_motor_clear_err(&motor[id]);
+    HAL_Delay(500);
+	/* 往电机的寄存器里面写入电机控制模式 */
+	write_motor_data(motor[id].hcan,motor[id].id, 10, motor[id].ctrl.mode, 0, 0, 0);    // 修改电机控制模式
+	HAL_Delay(100);
+	save_motor_data(motor[id].hcan,motor[id].id, 10);        // 保存电机参数
+	HAL_Delay(100);
+	dm_motor_enable(&motor[id]);    // 使能电机
+	HAL_Delay(1000);
+
 }
+
 /**
 ************************************************************************
 * @brief:      	read_all_motor_data: ��ȡ��������мĴ�����������Ϣ

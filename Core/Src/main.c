@@ -31,6 +31,7 @@
 #include "Serial.h"
 #include "YOU.h"
 #include "elrs.h"
+#include "R2R.h"
 #include "bsp_fdcan.h"
 #include "DJI_Motor.h"
 #include "pid.h"
@@ -142,6 +143,7 @@ int main(void)
 
   //IMU_Init();
   ELRS_Init();
+  R2R_Init();//两车通信
   DJI_Motor_Init();
   ZDYZ_Init();
   Serial_Init();
@@ -150,6 +152,7 @@ int main(void)
   //导轨\舵机初始化
   //gripper_Init();
   //剪式升降机构初始化
+  //HAL_Delay(500);//等待达妙电机上电
   sl_Init();
   /* USER CODE END 2 */
 
@@ -163,15 +166,16 @@ int main(void)
 
   while (1)
   {
+    R2R_Update();
     IMU_Task(remoter.key.SE,1);
     //Serial_Printf("%f,%f\n",imu_data.yaw,yaw_rad);
     //Serial_Printf("%d\n", motor_feedback[MOTOR_3508_ID5_INDEX].loop/19);
     //motor_abs_turns(1,remoter.var.S1,3000,150);
     // 测试不同的速度值
-    Serial_Printf("%f\n", motor_feedback[MOTOR_6020_ID3_INDEX].angle);//校准0位
+    //Serial_Printf("%f\n", motor_feedback[MOTOR_6020_ID3_INDEX].angle);//校准0位
     //Serial_Printf("%f,%f,%f,%f\n", target_angle_deg, actual_angle,outspeed,speed_dps);//6020
     //gripper_Task(1, remoter.key.SF, remoter.var.S1);
-    scissor_lift_Task(remoter.var.S1,remoter.key.SB);
+    scissor_lift_Task(remoter.var.S1/5,remoter.var.S2*0.0628,remoter.key.SB,remoter.key.SC,remoter.key.SD);
     //scissor_lift_Task(10);
     Chassis_Rudder_Task(&chassis, remoter.key.SA,
                       remoter.joy.l_x, remoter.joy.l_y, remoter.joy.r_y);

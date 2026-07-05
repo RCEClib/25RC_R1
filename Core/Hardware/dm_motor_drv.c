@@ -59,33 +59,33 @@ void dm_motor_disable(motor_t *motor)
 	}	
 	dm_motor_clear_para(motor);
 }
-/**
-************************************************************************
-* @brief:      	dm4310_ctrl_send: 发送DM4310电机控制命令函数
-* @param[in]:   hcan:    指向CAN_HandleTypeDef结构的指针
-* @param[in]:   motor:   指向motor_t结构的指针，包含电机相关信息和控制参数
-* @retval:     	void
-* @details:    	根据电机控制模式发送相应的命令到DM4310电机
-*               支持的控制模式包括位置模式、位置速度控制模式和速度控制模式
-************************************************************************
-**/
-void dm_motor_ctrl_send(motor_t *motor)
-{
-	switch(motor->ctrl.mode)
-	{
-		case mit_mode:
-			mit_ctrl(motor->hcan, motor, motor->id, motor->ctrl.pos_set, motor->ctrl.vel_set, motor->ctrl.kp_set, motor->ctrl.kd_set, motor->ctrl.tor_set);
-			break;
-		case pos_mode:
-			pos_ctrl(motor->hcan, motor->id, motor->ctrl.pos_set, motor->ctrl.vel_set);
-			break;
-		case spd_mode:
-			spd_ctrl(motor->hcan, motor->id, motor->ctrl.vel_set);
-			break;
-		case psi_mode:
-			psi_ctrl(motor->hcan, motor->id,motor->ctrl.pos_set, motor->ctrl.vel_set, motor->ctrl.cur_set);
-			break;
-	}	
+ /**
+ ************************************************************************
+ * @brief:      	dm4310_ctrl_send: 发送DM4310电机控制命令函数
+ * @param[in]:   hcan:    指向CAN_HandleTypeDef结构的指针
+ * @param[in]:   motor:   指向motor_t结构的指针，包含电机相关信息和控制参数
+ * @retval:     	void
+ * @details:    	根据电机控制模式发送相应的命令到DM4310电机
+ *               支持的控制模式包括位置模式、位置速度控制模式和速度控制模式
+ ************************************************************************
+ **/
+ void dm_motor_ctrl_send(motor_t *motor)
+ {
+ 	switch(motor->ctrl.mode)
+ 	{
+ 		case mit_mode:
+ 			mit_ctrl(motor->hcan, motor, motor->id, motor->ctrl.pos_set, motor->ctrl.vel_set, motor->ctrl.kp_set, motor->ctrl.kd_set, motor->ctrl.tor_set);
+ 			break;
+ 		case pos_mode:
+ 			pos_ctrl(motor->hcan, motor->id, motor->ctrl.pos_set, motor->ctrl.vel_set);
+ 			break;
+ 		case spd_mode:
+ 			spd_ctrl(motor->hcan, motor->id, motor->ctrl.vel_set);
+ 			break;
+ 		case psi_mode:
+ 			psi_ctrl(motor->hcan, motor->id,motor->ctrl.pos_set, motor->ctrl.vel_set, motor->ctrl.cur_set);
+ 			break;
+ 	}
 }
 
 /**
